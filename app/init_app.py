@@ -20,6 +20,9 @@ class MyAppInit:
         self.saved_filter_type = None
         self.saved_min = None
         self.saved_max = None
+        self.save_data_h = None
+        self.save_data_l = None
+        self.save_camera_allowed = False
 
         image_gradient_green_yellow_red = loader.loadTexture('static/img/r_o_y_g_gradient.png')
         custom_font = loader.loadFont('static/fonts/Ubuntu-Regular.ttf')
@@ -135,7 +138,14 @@ class MyAppInit:
             parent=self.info_frame,
             command=self.on_slider_change
         )
-        # hide frame
+        self.back_button_from_point_view = DirectButton(
+            text="Назад",
+            scale=0.1,
+            pos=(-1, 0, 0.7),
+            text_font=custom_font,
+            command=self.back_from_point_view
+        )
+        self.back_button_from_point_view.hide()
         self.image_label.hide()
         self.scroll_frame.hide()
         self.info_frame.hide()

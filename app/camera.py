@@ -6,6 +6,8 @@ class CameraControl:
         self.base = base
         self.mouse_is_pressed = False
         self.left_mouse_is_pressed = False
+        self.ignore_first_mouse_movement = False
+        self.ignore_first_left_mouse_movement = False
         self.dx = 0
         self.dy = 0
         self.zoom_speed = 10
@@ -22,13 +24,22 @@ class CameraControl:
         self.base.accept('wheel_down', self.on_wheel_down)
         self.base.taskMgr.add(self.update_camera_task, "UpdateCameraTask")
 
+    def ignore_first_move(self):
+        if self.ignore_first_mouse_movement:
+            self.ignore_first_mouse_movement = False
+            self.reset_mouse_position()
+            return
+
+        mouse_data = self.base.win.getPointer(0)
+        self.dx = mouse_data.getX() - self.base.win.getProperties().getXSize() // 2
+        self.dy = mouse_data.getY() - self.base.win.getProperties().getYSize() // 2
+
     def set_initial_camera_position(self):
         """Устанавливаем начальную позицию и ориентацию камеры."""
         print("Setting initial camera position...")
         initial_pos = Vec3(-63.80, -528.95, 140.59)
         initial_hpr = Vec3(-26.77, -20.25, 0.45)
 
-        # Устанавливаем камеру
         self.base.camera.setPos(initial_pos)
         self.base.camera.setHpr(initial_hpr)
 
@@ -57,9 +68,7 @@ class CameraControl:
 
     def handle_camera_pan(self):
         """Перемещение камеры по ПКМ с учётом ориентации."""
-        mouse_data = self.base.win.getPointer(0)
-        self.dx = mouse_data.getX() - self.base.win.getProperties().getXSize() // 2
-        self.dy = mouse_data.getY() - self.base.win.getProperties().getYSize() // 2
+        self.ignore_first_move()
 
         if self.dx != 0 or self.dy != 0:
             print(f"[PAN] Mouse moved: dx={self.dx}, dy={self.dy}")
@@ -75,17 +84,11 @@ class CameraControl:
             self.base.camera.setPos(new_pos)
             print(f"[PAN] Camera position: {self.base.camera.getPos()}")
 
-        self.base.win.movePointer(
-            0,
-            self.base.win.getProperties().getXSize() // 2,
-            self.base.win.getProperties().getYSize() // 2
-        )
+        self.reset_mouse_position()
 
     def handle_camera_rotation(self):
         """Вращение камеры по ЛКМ."""
-        mouse_data = self.base.win.getPointer(0)
-        self.dx = mouse_data.getX() - self.base.win.getProperties().getXSize() // 2
-        self.dy = mouse_data.getY() - self.base.win.getProperties().getYSize() // 2
+        self.ignore_first_move()
 
         if self.dx != 0 or self.dy != 0:
             print(f"[ROTATE] Mouse moved: dx={self.dx}, dy={self.dy}")
@@ -99,24 +102,33 @@ class CameraControl:
             self.base.camera.setHpr(new_h, new_p, current_hpr.getZ())
             print(f"[ROTATE] Camera rotation: {self.base.camera.getHpr()}")
 
-        self.base.win.movePointer(
-            0,
-            self.base.win.getProperties().getXSize() // 2,
-            self.base.win.getProperties().getYSize() // 2
-        )
+        self.reset_mouse_position()
+
+    def reset_mouse_position(self):
+        """Перемещает указатель мыши в центр экрана."""
+        center_x = self.base.win.getProperties().getXSize() // 2
+        center_y = self.base.win.getProperties().getYSize() // 2
+        self.base.win.movePointer(0, center_x, center_y)
 
     def on_mouse_press(self):
+        self.ignore_first_mouse_movement = False
+        self.ignore_first_left_mouse_movement = False
         self.mouse_is_pressed = True
         self.hide_cursor()
+        self.reset_mouse_position()
         print("[PRESS] Mouse button pressed (Right)")
 
     def on_mouse_release(self):
         self.mouse_is_pressed = False
         self.show_cursor()
+        self.reset_mouse_position()
         print("[RELEASE] Mouse button released (Right)")
 
     def on_left_mouse_press(self):
+        self.ignore_first_mouse_movement = False
+        self.ignore_first_left_mouse_movement = False
         self.left_mouse_is_pressed = True
+        self.reset_mouse_position()
         self.hide_cursor()
         print("[PRESS] Mouse button pressed (Left)")
 

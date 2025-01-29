@@ -7,20 +7,18 @@ from direct.gui.DirectDialog import OkDialog
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.DirectOptionMenu import DirectOptionMenu
 from direct.showbase.ShowBase import ShowBase
-from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import NodePath
 
 from app.camera import CameraControl
 from app.const import LOGS_DIR, YEARS, MONTHS, DAYS
 from app.init_app import MyAppInit
-from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud
+from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
 
 
 class MyApp(ShowBase, MyAppInit, CameraControl):
     def __init__(self):
         ShowBase.__init__(self)
         MyAppInit.__init__(self)
-        CameraControl.__init__(self, self)
 
     def create_date_selectors(self, y_offset, font):
         """Создать элементы выбора даты."""
@@ -40,6 +38,7 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
 
     def load_file_list(self, start_date=None, end_date=None):
         """Загрузить список файлов в скроллируемый фрейм."""
+        self.save_camera_allowed = False
         file_names = [
             filename for filename in os.listdir(LOGS_DIR)
             if filename.endswith('.dt') and self.filter_by_date(filename, start_date, end_date)
@@ -63,7 +62,8 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
             )
             self.checkboxes.append(checkbox)
 
-    def filter_by_date(self, filename, start_date, end_date):
+    @staticmethod
+    def filter_by_date(filename, start_date, end_date):
         """Фильтровать файлы по диапазону дат."""
         prog_number, file_date = extract_prog_number(filename)
         if start_date and end_date:
@@ -83,8 +83,20 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
-        start_date = f"{self.year_menu_first.get()}-{self.month_menu_first.get().zfill(2)}-{self.day_menu_first.get().zfill(2)}"
-        end_date = f"{self.year_menu_second.get()}-{self.month_menu_second.get().zfill(2)}-{self.day_menu_second.get().zfill(2)}"
+        start_date = f"{
+            self.year_menu_first.get()
+        }-{
+            self.month_menu_first.get().zfill(2)
+        }-{
+            self.day_menu_first.get().zfill(2)
+        }"
+        end_date = f"{
+            self.year_menu_second.get()
+        }-{
+            self.month_menu_second.get().zfill(2)
+        }-{
+            self.day_menu_second.get().zfill(2)
+        }"
 
         if on_date_selected(start_date, end_date) == 1:
             self.show_error_dialog()
@@ -92,6 +104,8 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
             self.start_frame.hide()
             self.date_frame.show()
             self.scroll_frame.show()
+            self.save_data_h = start_date
+            self.save_data_l = end_date
             self.load_file_list(start_date=start_date, end_date=end_date)
 
     def show_error_dialog(self):
@@ -126,9 +140,6 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         self.scroll_frame.hide()
         print(f"Выбранные файлы: {self.file_names}")
 
-        if hasattr(self, 'point_cloud_nodes'):
-            for node in self.point_cloud_nodes:
-                node.removeNode()
         self.point_cloud_nodes = []
 
         gradient_param = self.magnitude_menu.get()
@@ -137,7 +148,9 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         for i, file_name in enumerate(self.file_names):
             file_path = os.path.join(LOGS_DIR, file_name)
             node_path = load_logs_and_create_point_cloud(
-                file_path, self.render, gradient_param=gradient_param, filter_type=filter_type
+                file_path, self.render,
+                gradient_param=gradient_param,
+                filter_type=filter_type
             )
 
             if node_path:
@@ -146,14 +159,17 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
                 self.info_frame.show()
 
         if self.point_cloud_nodes:
+            self.back_button_from_point_view.show()
             self.image_label.show()
             self.number_input_top.show()
             self.number_input_bottom.show()
+            self.save_camera_allowed = True
+            if self.save_camera_allowed:
+                CameraControl.__init__(self, self)
             print("Позиция камеры установлена вручную.")
 
     def refresh_gradient(self):
         """Перерисовать облака точек с новым параметром градиента."""
-        # Сохраняем текущие значения фильтров и полей ввода
         self.saved_gradient_param = self.magnitude_menu.get()
         self.saved_filter_type = self.magnitude_menu_filter.get()
         try:
@@ -176,26 +192,50 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         self.point_cloud_nodes.clear()
 
         for file_name in self.file_names:
-            file_path = os.path.join(LOGS_DIR, file_name)
-            result = load_logs_and_create_point_cloud(
-                file_path=file_path,
-                parent=self.render,
-                gradient_param=self.saved_gradient_param,
-                custom_min=self.saved_min,
-                custom_max=self.saved_max,
-                filter_type=self.saved_filter_type
+            result = get_result(
+                os.path.join(LOGS_DIR, file_name),
+                self.render,
+                self.saved_gradient_param,
+                self.saved_min,
+                self.saved_max,
+                self.saved_filter_type
             )
 
-            if result:
-                if isinstance(result, tuple):
-                    node_path = result[0]
-                else:
-                    node_path = result
-
-                if isinstance(node_path, NodePath):
-                    self.point_cloud_nodes.append(node_path)
+            if isinstance(result, NodePath):
+                self.point_cloud_nodes.append(result)
 
         print(f"Обновление завершено: {len(self.point_cloud_nodes)} облаков точек перерисовано.")
+
+    def back_from_point_view(self):
+        for node in self.point_cloud_nodes:
+            if isinstance(node, tuple):
+                node_path = node[0]
+            else:
+                node_path = node
+
+            if isinstance(node_path, NodePath):
+                node_path.removeNode()
+
+        self.point_cloud_nodes.clear()
+        self.file_names.clear()
+
+        for checkbox in self.checkboxes:
+            checkbox.destroy()
+        self.checkboxes.clear()
+
+        for label in self.labels:
+            label.destroy()
+        self.labels.clear()
+        self.save_camera_allowed = False
+        self.back_button_from_point_view.hide()
+        self.back_button.show()
+        self.image_label.hide()
+        self.info_frame.hide()
+        self.number_input_top.hide()
+        self.number_input_bottom.hide()
+        self.date_frame.show()
+        self.scroll_frame.show()
+        self.load_file_list(self.save_data_h, self.save_data_l)
 
     def on_slider_change(self):
         """Обработчик изменения слайдера для управления слоями."""
@@ -223,23 +263,16 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         self.point_cloud_nodes.clear()
 
         for i, file_name in enumerate(self.file_names[:visible_layers]):
-            file_path = os.path.join(LOGS_DIR, file_name)
-            result = load_logs_and_create_point_cloud(
-                file_path=file_path,
-                parent=self.render,
-                gradient_param=self.saved_gradient_param,
-                custom_min=self.saved_min,
-                custom_max=self.saved_max,
-                filter_type=self.saved_filter_type
+            result = get_result(
+                os.path.join(LOGS_DIR, file_name),
+                self.render,
+                self.saved_gradient_param,
+                self.saved_min,
+                self.saved_max,
+                self.saved_filter_type
             )
 
-            if result:
-                if isinstance(result, tuple):
-                    node_path = result[0]
-                else:
-                    node_path = result
-
-                if isinstance(node_path, NodePath):
-                    self.point_cloud_nodes.append(node_path)
+            if isinstance(result, NodePath):
+                self.point_cloud_nodes.append(result)
 
         print(f"Отображается {len(self.point_cloud_nodes)} слоев.")

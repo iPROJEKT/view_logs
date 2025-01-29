@@ -18,7 +18,8 @@ setup(
                 '**/*.png',
                 '**/*.jpg',
                 '**/*.egg',
-                '**/*.ttf'
+                '**/*.ttf',
+                '**/*.dt'
             ],
 
             # Include the OpenGL renderer and OpenAL audio plug-in

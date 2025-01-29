@@ -27,7 +27,6 @@ def extract_prog_number(filename):
 def on_date_selected(start_date, end_date):
     """Обработчик ввода диапазона дат."""
     try:
-        # Преобразуем строки в объекты datetime
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
         if end_date_obj >= start_date_obj:
@@ -45,14 +44,12 @@ def load_log_data(file_path):
 
     with open(file_path, 'r') as file:
         for line in file:
-            # Пропускаем пустые строки или строки, которые не содержат ожидаемые данные
             if line.strip() == '':
                 continue
 
             values = line.split(';')
-            if len(values) >= 18:  # Убедимся, что индексы существуют
+            if len(values) >= 18:
                 try:
-                    # Читаем координаты и параметры
                     x = float(values[9].strip())
                     y = float(values[10].strip())
                     z = float(values[11].strip())
@@ -60,13 +57,11 @@ def load_log_data(file_path):
                     u = float(values[16].strip())
                     wfs = float(values[17].strip())
 
-                    # Сохраняем данные
                     data.append((x, y, z))
                     i_values.append(i)
                     u_values.append(u)
                     wfs_values.append(wfs)
                 except ValueError:
-                    # Игнорируем строки с некорректными значениями
                     continue
 
     if not data:
@@ -105,7 +100,7 @@ def generate_roygb_gradient(length_grad):
     def yellow_to_red(i, section):
         return [1, 1 - (i - section) / section, 0]
 
-    section = length_grad // 2  # Делим на две части: зелёный->жёлтый, жёлтый->красный
+    section = length_grad // 2
 
     # Заполнение градиента
     for i in range(length_grad + 1):
@@ -126,11 +121,10 @@ def create_point_cloud(data, param_normalized, royg_gradient, length_grad, paren
     for (x, y, z), param_norm in zip(data, param_normalized):
         vertex_writer.addData3f(x, y, z)
 
-        # Нормализуем grad_index, чтобы он не выходил за границы
-        grad_index = int(max(0, min(param_norm * (length_grad - 1), length_grad - 1)))  # Границы 0 и length_grad-1
+        grad_index = int(max(0, min(param_norm * (length_grad - 1), length_grad - 1)))
 
         color = royg_gradient[grad_index]
-        color_writer.addData4f(color[0], color[1], color[2], 1.0)
+        color_writer.addData4f(color[2], color[1], color[0], 1.0)
 
     points = Geom(vertex_data)
     primitive = GeomPoints(Geom.UH_static)
@@ -155,32 +149,25 @@ def load_logs_and_create_point_cloud(
     if not data:
         return None, None, None
 
-    # 2. Определение параметра для градиента
     param_values = get_gradient_param_values(gradient_param, i_values, u_values, wfs_values)
     if param_values is None:
         return None, None, None
 
-    # 3. Фильтрация данных
     filtered_data = filter_data(data, param_values, filter_type, custom_min, custom_max)
     if not filtered_data:
         print(f"Файл {file_path}: нет точек для отображения после фильтрации.")
         return None, None, None
 
-    # 4. Разделяем обратно координаты и параметры
     data, param_values = zip(*filtered_data)
 
-    # 5. Вычисление диапазона Z
     z_min, z_max = compute_z_range(data)
 
-    # 6. Нормализация параметров
     param_normalized = normalize_parameter(param_values, custom_min, custom_max)
     if param_normalized is None:
         return None, None, None
 
-    # 7. Генерация градиента
     royg_gradient = generate_roygb_gradient(length_grad)
 
-    # 8. Создание облака точек
     node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent)
 
     return node_path, [point[2] for point in data], (z_min, z_max)
@@ -207,7 +194,7 @@ def filter_data(data, param_values, filter_type, custom_min, custom_max):
     elif filter_type == "Out" and custom_min is not None and custom_max is not None:
         return [(point, param) for point, param in zip(data, param_values)
                 if param < custom_min or param > custom_max]
-    else:  # Для "All" просто используем все данные
+    else:
         return list(zip(data, param_values))
 
 
@@ -231,3 +218,21 @@ def calculate_center(points):
 
     num_points = len(points)
     return Point3(x_total / num_points, y_total / num_points, z_total / num_points)
+
+
+def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type):
+    result = load_logs_and_create_point_cloud(
+        file_path=file_path,
+        parent=parent,
+        gradient_param=gradient_param,
+        custom_min=custom_min,
+        custom_max=custom_max,
+        filter_type=filter_type
+    )
+    if result:
+        if isinstance(result, tuple):
+            node_path = result[0]
+        else:
+            node_path = result
+
+    return node_path
