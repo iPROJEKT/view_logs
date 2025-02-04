@@ -22,27 +22,20 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         self.calendar_app.ui.frame.hide()
 
     def calendar_popup(self, calendar_type):
-        """Открывает календарь"""
+        """Открывает календарь с указанием, какую дату выбираем"""
         print(f"Открываем календарь: {calendar_type}")
+        if calendar_type not in ["first", "second"]:
+            print("Ошибка: неправильный аргумент для calendar_popup!")
+        self.calendar_app.logic.selecting_start_date = (calendar_type == "first")
+        print(f"Выбор даты: {'начальная' if self.calendar_app.logic.selecting_start_date else 'конечная'}")
         self.calendar_app.ui.show()
         self.calendar_app.logic.update_calendar()
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
-        start_date = f"{
-            self.year_menu_first.get()
-        }-{
-            self.month_menu_first.get().zfill(2)
-        }-{
-            self.day_menu_first.get().zfill(2)
-        }"
-        end_date = f"{
-            self.year_menu_second.get()
-        }-{
-            self.month_menu_second.get().zfill(2)
-        }-{
-            self.day_menu_second.get().zfill(2)
-        }"
+        start_date = str(self.calendar_app.logic.start_date.date())
+        end_date = str(self.calendar_app.logic.end_date.date())
+        print(start_date, end_date)
 
         if on_date_selected(start_date, end_date) == 1:
             self.show_error_dialog()

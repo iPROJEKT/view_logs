@@ -3,13 +3,14 @@ from datetime import datetime
 
 class CalendarLogic:
     def __init__(self, ui):
-        self.ui = ui  # Store the UI reference
+        self.ui = ui
         self.current_date = datetime.now()
         self.year = self.current_date.year
         self.month = self.current_date.month
         self.start_date = None
         self.end_date = None
-        self.update_calendar()  # This will now correctly call update_ui on the UI
+        self.selecting_start_date = True  # По умолчанию выбираем начальную дату
+        self.update_calendar()
 
     def update_calendar(self):
         """Обновляет интерфейс календаря"""
@@ -44,7 +45,7 @@ class CalendarLogic:
         self.update_calendar()
 
     def select_day(self, i, j):
-        """Выбирает день в календаре и устанавливает диапазон"""
+        """Выбирает день в календаре"""
         first_day_weekday = (datetime(self.year, self.month, 1).weekday() + 1) % 7
         day = (i * 7) + j - first_day_weekday + 1
         days_in_month = self.get_days_in_month(self.year, self.month)
@@ -52,18 +53,14 @@ class CalendarLogic:
         if 1 <= day <= days_in_month:
             selected_date = datetime(self.year, self.month, day)
 
-            if not self.start_date or (self.start_date and self.end_date):
-                # Если start_date не установлена или оба установлены, начинаем новый диапазон
+            if self.selecting_start_date:
                 self.start_date = selected_date
-                self.end_date = None
-            elif self.start_date and not self.end_date:
-                # Если start_date уже установлена, ставим end_date
-                if selected_date < self.start_date:
-                    self.start_date, self.end_date = selected_date, self.start_date
-                else:
-                    self.end_date = selected_date
+                print(f"Выбрана начальная дата: {self.start_date.date()}")
+            else:
+                self.end_date = selected_date
+                print(f"Выбрана конечная дата: {self.end_date.date()}")
 
-            self.on_date_selected()
+            self.ui.hide()
             self.update_calendar()
 
     def on_date_selected(self):
