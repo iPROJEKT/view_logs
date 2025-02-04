@@ -1,6 +1,6 @@
 import logging
 
-from app.app import MyApp
+from app.core.app import MyApp
 from app.const import (
     LOG_FORM,
     LOG_FILEMOD,

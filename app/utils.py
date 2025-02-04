@@ -2,33 +2,39 @@ import re
 from datetime import datetime
 
 import numpy as np
-from panda3d.core import GeomVertexData, GeomVertexFormat, Geom, GeomVertexWriter, GeomPoints, GeomNode, Point3
+from panda3d.core import (
+    GeomVertexData,
+    GeomVertexFormat,
+    Geom, GeomVertexWriter,
+    GeomPoints, GeomNode, Point3
+)
+
+from app.const import (
+    REGULAR_FOR_MATCH,
+    REGULAR_FOR_SEARCH,
+    EXTRACT_PROG_DATE,
+    SELECT_PROG_DATE
+)
 
 
 def extract_prog_number(filename):
-    # Ищем номер программы
-    match_prog = re.match(r'prog(\d+)_', filename)
+    match_prog = re.match(REGULAR_FOR_MATCH, filename)
     prog_number = int(match_prog.group(1)) if match_prog else 0
-
-    # Ищем дату в формате 'день-месяц-год'
-    match_date = re.search(r'(\d{1,2}-\d{1,2}-\d{4})', filename)
+    match_date = re.search(REGULAR_FOR_SEARCH, filename)
     if match_date:
-        # Преобразуем строку даты в объект datetime
         date_str = match_date.group(1)
-        date_obj = datetime.strptime(date_str, '%d-%m-%Y')
+        date_obj = datetime.strptime(date_str, EXTRACT_PROG_DATE)
     else:
-        # Если дата не найдена, присваиваем минимальную дату
         date_obj = datetime.min
 
-    print(prog_number, date_obj)  # Для отладки
     return (prog_number, date_obj)
 
 
 def on_date_selected(start_date, end_date):
     """Обработчик ввода диапазона дат."""
     try:
-        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        start_date_obj = datetime.strptime(start_date, SELECT_PROG_DATE)
+        end_date_obj = datetime.strptime(end_date, SELECT_PROG_DATE)
         if end_date_obj >= start_date_obj:
             return 0
         else:
@@ -93,7 +99,6 @@ def generate_roygb_gradient(length_grad):
     """Создает градиент цветов от зелёного до красного."""
     royg_gradient = np.zeros((length_grad + 1, 3))
 
-    # Функции для вычисления цветовых значений для каждого перехода
     def green_to_yellow(i, section):
         return [i / section, 1, 0]
 
@@ -139,7 +144,11 @@ def create_point_cloud(data, param_normalized, royg_gradient, length_grad, paren
 
 
 def load_logs_and_create_point_cloud(
-        file_path, parent, gradient_param='I', length_grad=256, custom_min=None, custom_max=None,
+        file_path, parent,
+        gradient_param='I',
+        length_grad=256,
+        custom_min=None,
+        custom_max=None,
         filter_type="All"
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
@@ -221,6 +230,7 @@ def calculate_center(points):
 
 
 def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type):
+    node_path = None
     result = load_logs_and_create_point_cloud(
         file_path=file_path,
         parent=parent,

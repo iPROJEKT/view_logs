@@ -3,15 +3,14 @@ import threading
 from datetime import datetime
 
 from direct.gui.DirectCheckButton import DirectCheckButton
-from direct.gui.DirectDialog import OkDialog
 from direct.gui.DirectLabel import DirectLabel
-from direct.gui.DirectOptionMenu import DirectOptionMenu
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import NodePath
 
-from app.camera import CameraControl
-from app.const import LOGS_DIR, YEARS, MONTHS, DAYS
-from app.init_app import MyAppInit
+from app.core.calendar_control.calendar_app import CalendarApp
+from app.core.camera import CameraControl
+from app.const import LOGS_DIR
+from app.core.init_app import MyAppInit
 from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
 
 
@@ -19,22 +18,82 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
     def __init__(self):
         ShowBase.__init__(self)
         MyAppInit.__init__(self)
+        self.calendar_app = CalendarApp()
+        self.calendar_app.ui.frame.hide()
 
-    def create_date_selectors(self, y_offset, font):
-        """Создать элементы выбора даты."""
-        year_menu = DirectOptionMenu(
-            text="Год", scale=0.09, items=YEARS, initialitem=len(YEARS) - 1,
-            pos=(-0.6, 0, y_offset), text_font=font, parent=self.start_frame
-        )
-        month_menu = DirectOptionMenu(
-            text="Месяц", scale=0.09, items=MONTHS, initialitem=datetime.now().month - 1,
-            pos=(-0.2, 0, y_offset), text_font=font, parent=self.start_frame
-        )
-        day_menu = DirectOptionMenu(
-            text="День", scale=0.09, items=DAYS, initialitem=datetime.now().day - 1,
-            pos=(0.1, 0, y_offset), text_font=font, parent=self.start_frame
-        )
-        return year_menu, month_menu, day_menu
+    def calendar_popup(self, calendar_type):
+        """Открывает календарь"""
+        print(f"Открываем календарь: {calendar_type}")
+        self.calendar_app.ui.show()
+        self.calendar_app.logic.update_calendar()
+
+    def on_date_confirmed(self):
+        """Обработчик подтверждения выбора дат."""
+        start_date = f"{
+            self.year_menu_first.get()
+        }-{
+            self.month_menu_first.get().zfill(2)
+        }-{
+            self.day_menu_first.get().zfill(2)
+        }"
+        end_date = f"{
+            self.year_menu_second.get()
+        }-{
+            self.month_menu_second.get().zfill(2)
+        }-{
+            self.day_menu_second.get().zfill(2)
+        }"
+
+        if on_date_selected(start_date, end_date) == 1:
+            self.show_error_dialog()
+        else:
+            self.start_frame.hide()
+            self.date_frame.show()
+            self.scroll_frame.show()
+            self.save_data_h = start_date
+            self.save_data_l = end_date
+            self.load_file_list(start_date=start_date, end_date=end_date)
+
+    def show_error_dialog(self):
+        """Показать диалог ошибки."""
+        self.error_dialog.show()
+
+    def close_error_dialog(self, _):
+        """Закрыть диалог ошибки."""
+        if hasattr(self, 'error_dialog'):
+            self.error_dialog.hide()
+
+    def show_error_min_max(self):
+        """Показать диалог ошибки."""
+        self.error_min_max.show()
+
+    def close_error_min_max(self, _):
+        """Закрыть диалог ошибки."""
+        if hasattr(self, 'error_dialog'):
+            self.error_min_max.hide()
+
+    def on_back_button_pressed(self):
+        """Вернуться на предыдущий экран."""
+        for checkbox in self.checkboxes:
+            checkbox.destroy()
+        self.checkboxes.clear()
+
+        for label in self.labels:
+            label.destroy()
+        self.labels.clear()
+
+        self.date_frame.hide()
+        self.scroll_frame.hide()
+        self.start_frame.show()
+
+    def on_checkbox_toggled(self, value, index):
+        """Обработчик переключения чекбоксов."""
+        file_name = self.labels[index]['text']
+        if value and file_name not in self.file_names:
+            self.file_names.append(file_name)
+        elif not value and file_name in self.file_names:
+            self.file_names.remove(file_name)
+        print(f"Выбранные файлы: {self.file_names}")
 
     def load_file_list(self, start_date=None, end_date=None):
         """Загрузить список файлов в скроллируемый фрейм."""
@@ -71,68 +130,6 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
             end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
             return start_date_obj <= file_date <= end_date_obj
         return True
-
-    def on_checkbox_toggled(self, value, index):
-        """Обработчик переключения чекбоксов."""
-        file_name = self.labels[index]['text']
-        if value and file_name not in self.file_names:
-            self.file_names.append(file_name)
-        elif not value and file_name in self.file_names:
-            self.file_names.remove(file_name)
-        print(f"Выбранные файлы: {self.file_names}")
-
-    def on_date_confirmed(self):
-        """Обработчик подтверждения выбора дат."""
-        start_date = f"{
-            self.year_menu_first.get()
-        }-{
-            self.month_menu_first.get().zfill(2)
-        }-{
-            self.day_menu_first.get().zfill(2)
-        }"
-        end_date = f"{
-            self.year_menu_second.get()
-        }-{
-            self.month_menu_second.get().zfill(2)
-        }-{
-            self.day_menu_second.get().zfill(2)
-        }"
-
-        if on_date_selected(start_date, end_date) == 1:
-            self.show_error_dialog()
-        else:
-            self.start_frame.hide()
-            self.date_frame.show()
-            self.scroll_frame.show()
-            self.save_data_h = start_date
-            self.save_data_l = end_date
-            self.load_file_list(start_date=start_date, end_date=end_date)
-
-    def show_error_dialog(self):
-        """Показать диалог ошибки."""
-        self.error_dialog = OkDialog(
-            dialogName="ErrorDialog", text="Ошибка: конечная дата должна быть позже начальной!",
-            buttonTextList=["OK"], command=self.close_error_dialog
-        )
-
-    def close_error_dialog(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_dialog.destroy()
-
-    def on_back_button_pressed(self):
-        """Вернуться на предыдущий экран."""
-        for checkbox in self.checkboxes:
-            checkbox.destroy()
-        self.checkboxes.clear()
-
-        for label in self.labels:
-            label.destroy()
-        self.labels.clear()
-
-        self.date_frame.hide()
-        self.scroll_frame.hide()
-        self.start_frame.show()
 
     def on_done_button_pressed(self):
         """Обработчик кнопки 'Готово'."""
@@ -179,32 +176,34 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
             print("Ошибка: некорректные значения в полях ввода.")
             return
 
-        # Удаляем старые облака точек
-        for node in self.point_cloud_nodes:
-            if isinstance(node, tuple):
-                node_path = node[0]
-            else:
-                node_path = node
+        if self.saved_min >= self.saved_max:
+            self.error_min_max.show()
+        else:
+            for node in self.point_cloud_nodes:
+                if isinstance(node, tuple):
+                    node_path = node[0]
+                else:
+                    node_path = node
 
-            if isinstance(node_path, NodePath):
-                node_path.removeNode()
+                if isinstance(node_path, NodePath):
+                    node_path.removeNode()
 
-        self.point_cloud_nodes.clear()
+            self.point_cloud_nodes.clear()
 
-        for file_name in self.file_names:
-            result = get_result(
-                os.path.join(LOGS_DIR, file_name),
-                self.render,
-                self.saved_gradient_param,
-                self.saved_min,
-                self.saved_max,
-                self.saved_filter_type
-            )
+            for file_name in self.file_names:
+                result = get_result(
+                    os.path.join(LOGS_DIR, file_name),
+                    self.render,
+                    self.saved_gradient_param,
+                    self.saved_min,
+                    self.saved_max,
+                    self.saved_filter_type
+                )
 
-            if isinstance(result, NodePath):
-                self.point_cloud_nodes.append(result)
+                if isinstance(result, NodePath):
+                    self.point_cloud_nodes.append(result)
 
-        print(f"Обновление завершено: {len(self.point_cloud_nodes)} облаков точек перерисовано.")
+            print(f"Обновление завершено: {len(self.point_cloud_nodes)} облаков точек перерисовано.")
 
     def back_from_point_view(self):
         for node in self.point_cloud_nodes:
