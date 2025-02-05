@@ -19,27 +19,21 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         ShowBase.__init__(self)
         MyAppInit.__init__(self)
         self.calendar_app = CalendarApp()
-        self.calendar_app.ui.frame.hide()
-
-    def calendar_popup(self, calendar_type):
-        """Открывает календарь с указанием, какую дату выбираем"""
-        print(f"Открываем календарь: {calendar_type}")
-        if calendar_type not in ["first", "second"]:
-            print("Ошибка: неправильный аргумент для calendar_popup!")
-        self.calendar_app.logic.selecting_start_date = (calendar_type == "first")
-        print(f"Выбор даты: {'начальная' if self.calendar_app.logic.selecting_start_date else 'конечная'}")
-        self.calendar_app.ui.show()
-        self.calendar_app.logic.update_calendar()
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
-        start_date = str(self.calendar_app.logic.start_date.date())
-        end_date = str(self.calendar_app.logic.end_date.date())
-        print(start_date, end_date)
-
+        start_date = str(self.calendar_app.logic.start_date)
+        end_date = str(self.calendar_app.logic.end_date)
         if on_date_selected(start_date, end_date) == 1:
             self.show_error_dialog()
+            self.calendar_app.ui.frame.hide()
+            self.calendar_app.ui.open_calendar_first.hide()
+            self.calendar_app.ui.open_calendar_second.hide()
+            self.confirm_button.hide()
         else:
+            self.calendar_app.ui.frame.hide()
+            self.calendar_app.ui.open_calendar_first.hide()
+            self.calendar_app.ui.open_calendar_second.hide()
             self.start_frame.hide()
             self.date_frame.show()
             self.scroll_frame.show()
@@ -55,6 +49,9 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
             self.error_dialog.hide()
+            self.calendar_app.ui.open_calendar_first.show()
+            self.calendar_app.ui.open_calendar_second.show()
+            self.confirm_button.show()
 
     def show_error_min_max(self):
         """Показать диалог ошибки."""
@@ -74,7 +71,8 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         for label in self.labels:
             label.destroy()
         self.labels.clear()
-
+        self.calendar_app.ui.open_calendar_first.show()
+        self.calendar_app.ui.open_calendar_second.show()
         self.date_frame.hide()
         self.scroll_frame.hide()
         self.start_frame.show()
@@ -102,15 +100,17 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
         self.scroll_frame['canvasSize'] = (-0.9, 0.9, -total_height, 0.1)
 
         for i, file_name in enumerate(file_names):
-            y_pos = -0.02 - i * element_height
+            y_pos = -0.03 - i * element_height
+            y_poz_for_check = -0.01 - i * element_height
             label = DirectLabel(
-                text=file_name, scale=0.05, pos=(-0.5, 0, y_pos),
-                parent=self.scroll_frame.getCanvas(), frameColor=(0, 0, 0, 0)
+                text=file_name, scale=0.07, pos=(-0.3, 0, y_pos),
+                parent=self.scroll_frame.getCanvas(), frameColor=(0, 0, 0, 0),
             )
             self.labels.append(label)
             checkbox = DirectCheckButton(
-                scale=0.05, pos=(0.5, 0, y_pos), parent=self.scroll_frame.getCanvas(),
-                indicatorValue=0, command=self.on_checkbox_toggled, extraArgs=[i]
+                scale=0.05, pos=(0.8, 0, y_poz_for_check), parent=self.scroll_frame.getCanvas(),
+                indicatorValue=0, command=self.on_checkbox_toggled, extraArgs=[i],
+                relief=None,
             )
             self.checkboxes.append(checkbox)
 

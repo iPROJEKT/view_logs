@@ -2,31 +2,55 @@ from datetime import datetime
 
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectFrame import DirectFrame
+from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 
 
 class CalendarUI:
     def __init__(self):
+        custom_font = loader.loadFont('static/fonts/Ubuntu-Regular.ttf')
         self.frame = DirectFrame(
             frameColor=(0, 0, 0, 1),
             frameSize=(-0.8, 0.8, -0.6, 0.6),
             pos=(0, 0, 0),
         )
+        self.frame.hide()
+        self.open_calendar_first = DirectButton(
+            text="Начальная дата",
+            scale=0.15,
+            pos=(0, 0, 0.2),
+            command=self.calendar_popup,
+            text_font=custom_font,
+            relief=None,
+            text_fg=(1, 1, 1, 1),
+            text_bg=(46 / 255, 46 / 255, 46 / 255, 1),
+            extraArgs=["first"],
+        )
+        self.open_calendar_second = DirectButton(
+            text="Конечная дата",
+            scale=0.15,
+            pos=(0, 0, -0.4),
+            command=self.calendar_popup,
+            text_font=custom_font,
+            relief=None,
+            text_fg=(1, 1, 1, 1),
+            text_bg=(46 / 255, 46 / 255, 46 / 255, 1),
+            extraArgs=["second"],
+        )
         self.frame.hide()  # Начинаем с скрытого состояния
-
         self.month_label = OnscreenText(
             text="", pos=(0, 0.4), scale=0.07, parent=self.frame,
-            fg=(1, 1, 1, 1)
+            fg=(1, 1, 1, 1), font=custom_font
         )
         self.year_label = OnscreenText(
             text="", pos=(0, 0.5), scale=0.07, parent=self.frame,
-            fg=(1, 1, 1, 1)
+            fg=(1, 1, 1, 1), font=custom_font
         )
 
         self.prev_month_button = DirectButton(
             text="<", pos=(-0.4, 0, 0.4), scale=0.07, parent=self.frame,
-            command=self.change_month, extraArgs=[-1]  # Calls `self.change_month` method when clicked
+            command=self.change_month, extraArgs=[-1]
         )
         self.next_month_button = DirectButton(
             text=">", pos=(0.4, 0, 0.4), scale=0.07, parent=self.frame,
@@ -77,12 +101,26 @@ class CalendarUI:
                 day += 1
 
     def show(self):
-        """Показать календарь"""
+        """Показывает календарь и скрывает кнопки выбора дат"""
         self.frame.show()
+        self.open_calendar_first.hide()
+        self.open_calendar_second.hide()
 
     def hide(self):
-        """Скрыть календарь"""
+        """Скрывает календарь и показывает кнопки выбора дат"""
         self.frame.hide()
+        self.open_calendar_first.show()
+        self.open_calendar_second.show()
+
+    def calendar_popup(self, calendar_type):
+        """Открывает календарь и скрывает кнопки выбора даты"""
+        self.logic.calendar_popup(calendar_type)
+        self.show()
+
+    def select_day(self, i, j):
+        """Выбирает день, обновляет данные и закрывает календарь"""
+        self.logic.select_day(i, j)
+        self.hide()
 
     def change_month(self, delta):
         """This method is called when the user clicks the buttons to change the month"""
@@ -91,7 +129,3 @@ class CalendarUI:
     def change_year(self, delta):
         """This method is called when the user clicks the buttons to change the year"""
         self.logic.change_year(delta)  # Call the corresponding method in `CalendarLogic`
-
-    def select_day(self, i, j):
-        """This method is called when the user clicks a day in the calendar"""
-        self.logic.select_day(i, j)  # Call the corresponding method in `CalendarLogic`
