@@ -3,9 +3,10 @@ from direct.gui.DirectDialog import OkDialog
 from direct.gui.DirectEntry import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectLabel import DirectLabel
-from direct.gui.DirectOptionMenu import DirectOptionMenu
+from direct.gui.DirectOptionMenu import DirectOptionMenu, DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
 from direct.gui.DirectSlider import DirectSlider
+from panda3d.core import TextNode
 
 from app.const import TEXT_COLOR, BACKGROUND_COLOR_NOT_ACTIVE, BACKGROUND_COLOR_CHOICE
 
@@ -75,7 +76,7 @@ class MyAppInit:
             command=self.on_done_button_pressed,
             text_font=custom_font,
             parent=self.date_frame,
-            relief=None,
+                relief=None,
             text_fg=TEXT_COLOR,
             text_bg=BACKGROUND_COLOR_CHOICE
         )
@@ -116,7 +117,7 @@ class MyAppInit:
         self.filters = DirectLabel(
             text="Filters",
             scale=0.08,
-            pos=(-0.1, 0, 0.19),
+            pos=(-0.1, 0, 0.15),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
             parent=self.info_frame,
@@ -136,13 +137,51 @@ class MyAppInit:
             text_bg=BACKGROUND_COLOR_NOT_ACTIVE
 
         )
+        self.filter_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.18, 0.13, -0.06, 0.06),
+            pos=(0.4, 0, 0.18),
+            parent=self.info_frame
+        )
+        self.value_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.18, 0.13, -0.06, 0.06),
+            pos=(0.4, 0, 0.31),
+            parent=self.info_frame
+        )
         self.magnitude_menu_filter = DirectOptionMenu(
-            text="Фильтрация", scale=0.1, items=["All", "Into", "Out"], initialitem=0,
-            pos=(0.4, 0, 0.19), text_font=custom_font, parent=self.info_frame,
+            text="Фильтрация",
+            scale=0.1,
+            items=["All", "Into", "Out"],
+            initialitem=0,
+            pos=(-0.05, 0, -0.03),
+            text_font=custom_font,
+            parent=self.filter_frame,
+            relief=None,
+            popupMarker_frameColor=(1, 1, 1, 1),  # Белый треугольник-указатель
+            popupMarker_relief=None,
+            item_frameColor=(0.3, 0.3, 0.3, 1),  # Цвет фона списка
+            item_text_fg=(1, 1, 1, 1),  # Цвет текста в списке
+            item_relief=DGG.FLAT,
+            text_fg=TEXT_COLOR,
+            text_align=TextNode.ACenter
         )
         self.magnitude_menu = DirectOptionMenu(
-            text="Величина", scale=0.1, items=["I", "U", "WFS"], initialitem=0,
-            pos=(0.4, 0, 0.3), text_font=custom_font, parent=self.info_frame,
+            text="Величина",
+            scale=0.1,
+            items=["I", "U", "WFS"],
+            initialitem=0,
+            pos=(-0.05, 0, -0.03),
+            text_font=custom_font,
+            parent=self.value_frame,
+            relief=None,
+            popupMarker_frameColor=(1, 1, 1, 1),  # Белый треугольник-указатель
+            popupMarker_relief=None,
+            item_frameColor=(0.3, 0.3, 0.3, 1),  # Цвет фона списка
+            item_text_fg=(1, 1, 1, 1),  # Цвет текста в списке
+            item_relief=DGG.FLAT,
+            text_fg=TEXT_COLOR,
+            text_align=TextNode.ACenter
         )
         self.refresh_button = DirectButton(
             text="Refresh",
