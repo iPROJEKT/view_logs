@@ -5,6 +5,9 @@ from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
+from panda3d.core import TextNode
+
+from app.const import TEXT_COLOR, BACKGROUND_COLOR_CHOICE
 
 
 class CalendarUI:
@@ -13,7 +16,7 @@ class CalendarUI:
         self.frame = DirectFrame(
             frameColor=(0, 0, 0, 1),
             frameSize=(-0.8, 0.8, -0.6, 0.6),
-            pos=(0, 0, 0),
+            pos=(0, 0, 0.25),
         )
         self.frame.hide()
         self.open_calendar_first = DirectButton(
@@ -48,21 +51,75 @@ class CalendarUI:
             fg=(1, 1, 1, 1), font=custom_font
         )
 
+        self.prev_month_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            pos=(-0.4, 0, 0.42),
+            parent=self.frame
+        )
         self.prev_month_button = DirectButton(
-            text="<", pos=(-0.4, 0, 0.4), scale=0.07, parent=self.frame,
-            command=self.change_month, extraArgs=[-1]
+            text="<", pos=(0, 0, -0.02),
+            text_scale=(0.1, 0.1),
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            command=self.change_month, extraArgs=[-1],
+            text_align=TextNode.ACenter,
+            text_fg=TEXT_COLOR,
+            relief=None,
+            parent=self.prev_month_frame,
+        )
+
+        # Фрейм для кнопки "Следующий месяц"
+        self.next_month_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            pos=(0.4, 0, 0.42),
+            parent=self.frame
         )
         self.next_month_button = DirectButton(
-            text=">", pos=(0.4, 0, 0.4), scale=0.07, parent=self.frame,
-            command=self.change_month, extraArgs=[1]  # Calls `self.change_month` method when clicked
+            text=">", pos=(0, 0, -0.02),
+            text_scale=(0.1, 0.1),
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            command=self.change_month, extraArgs=[1],
+            text_align=TextNode.ACenter,
+            text_fg=TEXT_COLOR,
+            relief=None,
+            parent=self.next_month_frame,
+        )
+
+        # Фрейм для кнопки "Предыдущий год"
+        self.prev_year_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            pos=(-0.4, 0, 0.52),
+            parent=self.frame
         )
         self.prev_year_button = DirectButton(
-            text="<<", pos=(-0.4, 0, 0.5), scale=0.07, parent=self.frame,
-            command=self.change_year, extraArgs=[-1]  # Calls `self.change_year` method when clicked
+            text="<<", pos=(0, 0, -0.02),
+            text_scale=(0.1, 0.1),
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            command=self.change_year, extraArgs=[-1],
+            text_align=TextNode.ACenter,
+            text_fg=TEXT_COLOR,
+            relief=None,
+            parent=self.prev_year_frame,
+        )
+
+        # Фрейм для кнопки "Следующий год"
+        self.next_year_frame = DirectFrame(
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            pos=(0.4, 0, 0.52),
+            parent=self.frame
         )
         self.next_year_button = DirectButton(
-            text=">>", pos=(0.4, 0, 0.5), scale=0.07, parent=self.frame,
-            command=self.change_year, extraArgs=[1]  # Calls `self.change_year` method when clicked
+            text=">>", pos=(0, 0, -0.02),
+            text_scale=(0.1, 0.1),
+            frameSize=(-0.08, 0.08, -0.04, 0.04),
+            command=self.change_year, extraArgs=[1],
+            text_align=TextNode.ACenter,
+            text_fg=TEXT_COLOR,
+            relief=None,
+            parent=self.next_year_frame,
         )
 
         self.day_buttons = []
@@ -72,11 +129,25 @@ class CalendarUI:
         """Создает сетку с днями"""
         for i in range(6):
             for j in range(7):
+                frame = DirectFrame(
+                    frameColor=BACKGROUND_COLOR_CHOICE,  # Тёмно-серый фон (можно поменять)
+                    frameSize=(-0.07, 0.07, -0.07, 0.07),  # Размер под кнопку
+                    pos=(-0.6 + j * 0.2, 0, 0.2 - i * 0.2),
+                    parent=self.frame
+                )
+
+                # Создаём кнопку поверх фрейма
                 button = DirectButton(
-                    text="", pos=(-0.6 + j * 0.2, 0, 0.2 - i * 0.2), scale=0.08,
-                    frameSize=(-1, 1, -1, 1),
-                    command=self.select_day, extraArgs=[i, j], parent=self.frame,
-                    text_fg=(1, 1, 1, 1), relief=None,
+                    text="",
+                    pos=(0, 0, -0.01),  # Позиция относительно фрейма (по центру)
+                    scale=0.07,  # Масштаб кнопки
+                    frameSize=(-1, 1, -1, 1),  # Подгоняем размер
+                    command=self.select_day,
+                    extraArgs=[i, j],
+                    parent=frame,  # Делаем кнопку дочерним элементом фрейма
+                    text_align=TextNode.ACenter,  # Центрируем текст
+                    text_fg=(1, 1, 1, 1),  # Белый цвет текста
+                    relief=None,  # Без рельефа
                 )
                 self.day_buttons.append(button)
 

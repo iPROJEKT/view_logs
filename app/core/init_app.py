@@ -95,17 +95,23 @@ class MyAppInit:
         )
         self.number_input_top = DirectEntry(
             scale=0.1,  # Размер поля ввода
-            pos=(1, 0, 0.8),  # Позиция над изображением
+            pos=(1.1, 0, 0.8),  # Позиция над изображением
             width=3,  # Ширина поля ввода
             initialText="100",  # Изначальный текст (например, "0")
-            focus=True,  # Фокус на поле при старте
+            text_fg=TEXT_COLOR,
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            relief=DGG.FLAT,
+            text_align=TextNode.ACenter
         )
         self.number_input_bottom = DirectEntry(
             scale=0.1,  # Размер поля ввода
-            pos=(1, 0, -0.85),  # Позиция под изображением
+            pos=(1.1, 0, -0.85),  # Позиция под изображением
             width=3,  # Ширина поля ввода
             initialText="0",  # Изначальный текст (например, "0")
-            focus=True,  # Фокус на поле при старте # Команда при изменении текста
+            text_fg=TEXT_COLOR,
+            frameColor=BACKGROUND_COLOR_CHOICE,
+            relief=DGG.FLAT,
+            text_align=TextNode.ACenter
         )
 
         # Последний фрейм
