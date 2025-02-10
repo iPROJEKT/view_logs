@@ -23,7 +23,7 @@ from app.core.UI_control.pop_menu import PopMenuUI
 from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
 
 
-class MyApp(
+class LogicApp(
     ShowBase,
     Variables,
     CameraControl,
@@ -32,7 +32,7 @@ class MyApp(
     ButtonsUI,
     ErrorDialogsUI,
     ImageUI,
-    PopMenuUI
+    PopMenuUI,
 ):
     def __init__(self):
         ShowBase.__init__(self)

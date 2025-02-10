@@ -1,6 +1,6 @@
 import logging
 
-from app.core.app import MyApp
+from app.core.logic import LogicApp
 from app.const import (
     LOG_FORM,
     LOG_FILEMOD,
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    app = MyApp()
+    app = LogicApp()
     app.run()
 
 
