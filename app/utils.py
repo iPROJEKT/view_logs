@@ -218,7 +218,6 @@ def calculate_center(points):
     if not points:
         return Point3(0, 0, 0)
 
-    # Суммируем все координаты и делим на количество точек
     x_total, y_total, z_total = 0, 0, 0
     for point in points:
         x_total += point[0]

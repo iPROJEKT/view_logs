@@ -7,11 +7,10 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 from panda3d.core import TextNode
 
-from app.const import TEXT_COLOR, BACKGROUND_COLOR_CHOICE
-
 
 class CalendarUI:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         custom_font = loader.loadFont('static/fonts/Ubuntu-Regular.ttf')
         self.frame = DirectFrame(
             frameColor=(0, 0, 0, 1),
@@ -52,7 +51,7 @@ class CalendarUI:
         )
 
         self.prev_month_frame = DirectFrame(
-            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameColor=self.config.background_color_choice,
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             pos=(-0.4, 0, 0.42),
             parent=self.frame
@@ -63,14 +62,14 @@ class CalendarUI:
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             command=self.change_month, extraArgs=[-1],
             text_align=TextNode.ACenter,
-            text_fg=TEXT_COLOR,
+            text_fg=self.config.text_color,
             relief=None,
             parent=self.prev_month_frame,
         )
 
         # Фрейм для кнопки "Следующий месяц"
         self.next_month_frame = DirectFrame(
-            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameColor=self.config.background_color_choice,
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             pos=(0.4, 0, 0.42),
             parent=self.frame
@@ -81,14 +80,14 @@ class CalendarUI:
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             command=self.change_month, extraArgs=[1],
             text_align=TextNode.ACenter,
-            text_fg=TEXT_COLOR,
+            text_fg=self.config.text_color,
             relief=None,
             parent=self.next_month_frame,
         )
 
         # Фрейм для кнопки "Предыдущий год"
         self.prev_year_frame = DirectFrame(
-            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameColor=self.config.background_color_choice,
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             pos=(-0.4, 0, 0.52),
             parent=self.frame
@@ -99,14 +98,14 @@ class CalendarUI:
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             command=self.change_year, extraArgs=[-1],
             text_align=TextNode.ACenter,
-            text_fg=TEXT_COLOR,
+            text_fg=self.config.text_color,
             relief=None,
             parent=self.prev_year_frame,
         )
 
         # Фрейм для кнопки "Следующий год"
         self.next_year_frame = DirectFrame(
-            frameColor=BACKGROUND_COLOR_CHOICE,
+            frameColor=self.config.background_color_choice,
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             pos=(0.4, 0, 0.52),
             parent=self.frame
@@ -117,7 +116,7 @@ class CalendarUI:
             frameSize=(-0.08, 0.08, -0.04, 0.04),
             command=self.change_year, extraArgs=[1],
             text_align=TextNode.ACenter,
-            text_fg=TEXT_COLOR,
+            text_fg=self.config.text_color,
             relief=None,
             parent=self.next_year_frame,
         )
@@ -130,7 +129,7 @@ class CalendarUI:
         for i in range(6):
             for j in range(7):
                 frame = DirectFrame(
-                    frameColor=BACKGROUND_COLOR_CHOICE,  # Тёмно-серый фон (можно поменять)
+                    frameColor=self.config.background_color_choice,  # Тёмно-серый фон (можно поменять)
                     frameSize=(-0.07, 0.07, -0.07, 0.07),  # Размер под кнопку
                     pos=(-0.6 + j * 0.2, 0, 0.2 - i * 0.2),
                     parent=self.frame

@@ -7,18 +7,47 @@ from direct.gui.DirectLabel import DirectLabel
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import NodePath
 
+from app.core.UI_control.help_text import TextUI
+from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
-from app.core.camera import CameraControl
+from app.core.camera_control.camera import CameraControl
 from app.const import LOGS_DIR
-from app.core.init_app import MyAppInit
+from app.core.config import Config
+from app.core.UI_control.variables import Variables
+from app.core.UI_control.buttons import ButtonsUI
+from app.core.UI_control.error import ErrorDialogsUI
+from app.core.UI_control.frame import FramesUI
+from app.core.UI_control.image import ImageUI
+from app.core.UI_control.input_fields import InputFieldsUI
+from app.core.UI_control.pop_menu import PopMenuUI
 from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
 
 
-class MyApp(ShowBase, MyAppInit, CameraControl):
+class MyApp(
+    ShowBase,
+    Variables,
+    CameraControl,
+    FramesUI,
+    InputFieldsUI,
+    ButtonsUI,
+    ErrorDialogsUI,
+    ImageUI,
+    PopMenuUI
+):
     def __init__(self):
         ShowBase.__init__(self)
-        MyAppInit.__init__(self)
-        self.calendar_app = CalendarApp()
+        self.config = Config()
+        FramesUI.__init__(self, self.config)
+        InputFieldsUI.__init__(self, self, self.config)
+        ButtonsUI.__init__(self, self, self.config)
+        ErrorDialogsUI.__init__(self, self, self.config)
+        ImageUI.__init__(self, self.config)
+        InputFieldsUI.__init__(self, self, self.config)
+        PopMenuUI.__init__(self, self, self.config)
+        Variables.__init__(self)
+        SliderUI.__init__(self, self)
+        TextUI.__init__(self, self, self.config)
+        self.calendar_app = CalendarApp(self.config)
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
@@ -40,27 +69,6 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
             self.save_data_h = start_date
             self.save_data_l = end_date
             self.load_file_list(start_date=start_date, end_date=end_date)
-
-    def show_error_dialog(self):
-        """Показать диалог ошибки."""
-        self.error_dialog.show()
-
-    def close_error_dialog(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_dialog.hide()
-            self.calendar_app.ui.open_calendar_first.show()
-            self.calendar_app.ui.open_calendar_second.show()
-            self.confirm_button.show()
-
-    def show_error_min_max(self):
-        """Показать диалог ошибки."""
-        self.error_min_max.show()
-
-    def close_error_min_max(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_min_max.hide()
 
     def on_back_button_pressed(self):
         """Вернуться на предыдущий экран."""
@@ -126,9 +134,12 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
 
     def on_done_button_pressed(self):
         """Обработчик кнопки 'Готово'."""
-        self.date_frame.hide()
-        self.scroll_frame.hide()
-        print(f"Выбранные файлы: {self.file_names}")
+        if len(self.file_names) == 0:
+            self.show_error_empty_log()
+        else:
+            self.date_frame.hide()
+            self.scroll_frame.hide()
+            print(f"Выбранные файлы: {self.file_names}")
 
         self.point_cloud_nodes = []
 
@@ -266,5 +277,34 @@ class MyApp(ShowBase, MyAppInit, CameraControl):
 
             if isinstance(result, NodePath):
                 self.point_cloud_nodes.append(result)
-
         print(f"Отображается {len(self.point_cloud_nodes)} слоев.")
+
+    def close_error_dialog(self, _):
+        """Закрыть диалог ошибки."""
+        if hasattr(self, 'error_dialog'):
+            self.error_dialog.hide()
+            self.calendar_app.ui.open_calendar_first.show()
+            self.calendar_app.ui.open_calendar_second.show()
+            self.confirm_button.show()
+
+    def show_error_dialog(self):
+        """Показать диалог ошибки."""
+        self.error_dialog.show()
+
+    def show_error_min_max(self):
+        """Показать диалог ошибки."""
+        self.error_min_max.show()
+
+    def show_error_empty_log(self):
+        """Показать диалог ошибки."""
+        self.error_empty_log.show()
+
+    def close_error_min_max(self, _):
+        """Закрыть диалог ошибки."""
+        if hasattr(self, 'error_dialog'):
+            self.error_min_max.hide()
+
+    def close_error_empty_log(self, _):
+        """Закрыть диалог ошибки."""
+        if hasattr(self, 'error_dialog'):
+            self.error_empty_log.hide()
