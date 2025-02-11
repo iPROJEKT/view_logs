@@ -42,9 +42,9 @@ class ButtonsUI:
             text_bg=self.config.background_color_choice
         )
         self.refresh_button = DirectButton(
-            text="Refresh",
+            text="Обновить",
             scale=0.08,
-            pos=(0.49, 0, -0.03),
+            pos=(0.44, 0, -0.03),
             command=self.parent.refresh_gradient,
             text_font=custom_font,
             parent=self.parent.info_frame,
@@ -61,5 +61,16 @@ class ButtonsUI:
             relief=None,
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_choice
+        )
+        self.select_all_up = DirectButton(
+            scale=0.09,
+            text='Выбрать все',
+            text_font=custom_font,
+            relief=None,
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_choice,
+            parent=self.parent.date_frame,
+            pos=(0.9, 0, 0.7),
+            command=self.parent.select_all_up
         )
         self.back_button_from_point_view.hide()

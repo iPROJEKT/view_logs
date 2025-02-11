@@ -9,7 +9,7 @@ from panda3d.core import (
     GeomPoints, GeomNode, Point3
 )
 
-from app.const import (
+from app.core.tools.const import (
     REGULAR_FOR_MATCH,
     REGULAR_FOR_SEARCH,
     EXTRACT_PROG_DATE,

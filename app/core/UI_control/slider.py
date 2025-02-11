@@ -10,5 +10,6 @@ class SliderUI:
             range=(1, 100),  # Диапазон значений для оси Y
             value=100,  # Начальное значение
             parent=self.parent.info_frame,
+            pos=(-0.1, 0, 0),
             command=self.parent.on_slider_change
         )

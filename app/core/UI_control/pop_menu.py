@@ -49,5 +49,6 @@ class PopMenuUI:
             text_fg=self.config.text_color,
             text_align=TextNode.ACenter,
             item_frameTexture=None,
-            item_image=None
+            item_image=None,
+            command=self.parent.update_labels
         )

@@ -11,7 +11,7 @@ from app.core.UI_control.help_text import TextUI
 from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
 from app.core.camera_control.camera import CameraControl
-from app.const import LOGS_DIR
+from app.core.tools.const import LOGS_DIR
 from app.core.config import Config
 from app.core.UI_control.variables import Variables
 from app.core.UI_control.buttons import ButtonsUI
@@ -20,7 +20,8 @@ from app.core.UI_control.frame import FramesUI
 from app.core.UI_control.image import ImageUI
 from app.core.UI_control.input_fields import InputFieldsUI
 from app.core.UI_control.pop_menu import PopMenuUI
-from app.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
+from app.core.splash_screen_control.screen_saver_logic import SplashScreenLogic
+from app.core.tools.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
 
 
 class LogicApp(
@@ -33,10 +34,12 @@ class LogicApp(
     ErrorDialogsUI,
     ImageUI,
     PopMenuUI,
+    SplashScreenLogic
 ):
     def __init__(self):
         ShowBase.__init__(self)
         self.config = Config()
+        SplashScreenLogic.__init__(self, self, self.config)
         FramesUI.__init__(self, self.config)
         InputFieldsUI.__init__(self, self, self.config)
         ButtonsUI.__init__(self, self, self.config)
@@ -121,6 +124,21 @@ class LogicApp(
                 relief=None,
             )
             self.checkboxes.append(checkbox)
+
+    def select_all_up(self):
+        """Выделяет или очищает все чекбоксы."""
+        all_selected = all(cb["indicatorValue"] for cb in self.checkboxes)
+        new_state = 0 if all_selected else 1
+
+        self.file_names.clear()  # Очищаем список перед выбором
+
+        for i, checkbox in enumerate(self.checkboxes):
+            checkbox["indicatorValue"] = new_state
+            checkbox.setIndicatorValue()
+            self.on_checkbox_toggled(new_state, i)  # Вызываем обработчик, как при клике
+
+        # Меняем текст кнопки
+        self.select_all_up["text"] = "Очистить все" if new_state else "Выбрать все"
 
     @staticmethod
     def filter_by_date(filename, start_date, end_date):
@@ -230,6 +248,7 @@ class LogicApp(
             label.destroy()
         self.labels.clear()
         self.save_camera_allowed = False
+        self.disable_camera_control()
         self.back_button_from_point_view.hide()
         self.back_button.show()
         self.image_label.hide()
@@ -237,6 +256,7 @@ class LogicApp(
         self.number_input_top.hide()
         self.number_input_bottom.hide()
         self.date_frame.show()
+        self.select_all_up["text"] = 'Выбрать все'
         self.scroll_frame.show()
         self.load_file_list(self.save_data_h, self.save_data_l)
 
@@ -308,3 +328,22 @@ class LogicApp(
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
             self.error_empty_log.hide()
+
+    def update_labels(self, selected_item):
+        if selected_item == "I":
+            self.parameters_up_help["text"] = "I max"
+            self.parameters_down_help["text"] = "I min"
+        elif selected_item == "U":
+            self.parameters_up_help["text"] = "U max"
+            self.parameters_down_help["text"] = "U min"
+        elif selected_item == "WFS":
+            self.parameters_up_help["text"] = "WFS max"
+            self.parameters_down_help["text"] = "WFS min"
+
+    def disable_camera_control(self):
+        """Отключает управление камерой."""
+        self.taskMgr.remove("UpdateCameraTask")
+        self.ignore("mouse1")  # Игнорируем ЛКМ
+        self.ignore("mouse3")  # Игнорируем ПКМ
+        self.ignore("wheel_up")  # Игнорируем прокрутку вверх
+        self.ignore("wheel_down")
