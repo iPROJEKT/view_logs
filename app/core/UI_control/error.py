@@ -26,6 +26,7 @@ class ErrorDialogsUI:
             text_font=custom_font,
             text_fg=self.config.text_color,
             relief=None,
+            text_bg=self.config.background_color_choice
         )
 
         self.error_empty_log = OkDialog(

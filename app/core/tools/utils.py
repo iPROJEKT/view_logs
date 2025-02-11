@@ -9,6 +9,7 @@ from panda3d.core import (
     GeomPoints, GeomNode, Point3
 )
 
+from app.core.UI_control.variables import Variables
 from app.core.tools.const import (
     REGULAR_FOR_MATCH,
     REGULAR_FOR_SEARCH,
@@ -71,7 +72,6 @@ def load_log_data(file_path):
                     continue
 
     if not data:
-        print("Нет данных для отображения.")
         return None, None, None, None
 
     return data, i_values, u_values, wfs_values
@@ -125,9 +125,7 @@ def create_point_cloud(data, param_normalized, royg_gradient, length_grad, paren
 
     for (x, y, z), param_norm in zip(data, param_normalized):
         vertex_writer.addData3f(x, y, z)
-
         grad_index = int(max(0, min(param_norm * (length_grad - 1), length_grad - 1)))
-
         color = royg_gradient[grad_index]
         color_writer.addData4f(color[2], color[1], color[0], 1.0)
 
@@ -152,8 +150,6 @@ def load_logs_and_create_point_cloud(
         filter_type="All"
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
-
-    # 1. Загрузка данных
     data, i_values, u_values, wfs_values = load_log_data(file_path)
     if not data:
         return None, None, None
@@ -168,17 +164,13 @@ def load_logs_and_create_point_cloud(
         return None, None, None
 
     data, param_values = zip(*filtered_data)
-
     z_min, z_max = compute_z_range(data)
-
     param_normalized = normalize_parameter(param_values, custom_min, custom_max)
     if param_normalized is None:
         return None, None, None
 
     royg_gradient = generate_roygb_gradient(length_grad)
-
     node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent)
-
     return node_path, [point[2] for point in data], (z_min, z_max)
 
 
@@ -191,8 +183,7 @@ def get_gradient_param_values(gradient_param, i_values, u_values, wfs_values):
     elif gradient_param == 'WFS':
         return wfs_values
     else:
-        print("Неверный параметр для градиента.")
-        return None
+        return i_values
 
 
 def filter_data(data, param_values, filter_type, custom_min, custom_max):

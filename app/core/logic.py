@@ -188,9 +188,10 @@ class LogicApp(
             print("Позиция камеры установлена вручную.")
 
     def refresh_gradient(self):
-        """Перерисовать облака точек с новым параметром градиента."""
+        """Перерисовать облака точек с новым параметром градиента и учётом слайдера."""
         self.saved_gradient_param = self.magnitude_menu.get()
         self.saved_filter_type = self.magnitude_menu_filter.get()
+
         try:
             self.saved_min = float(self.number_input_bottom.get())
             self.saved_max = float(self.number_input_top.get())
@@ -200,32 +201,17 @@ class LogicApp(
 
         if self.saved_min >= self.saved_max:
             self.error_min_max.show()
-        else:
-            for node in self.point_cloud_nodes:
-                if isinstance(node, tuple):
-                    node_path = node[0]
-                else:
-                    node_path = node
+            return
 
-                if isinstance(node_path, NodePath):
-                    node_path.removeNode()
+        slider_value = self.slider.getValue()
+        visible_layers = int((slider_value / 100) * len(self.file_names))
 
-            self.point_cloud_nodes.clear()
+        print(f"Обновление градиента и слоев: {self.saved_gradient_param}, отображаем 0-{visible_layers - 1} слоев.")
 
-            for file_name in self.file_names:
-                result = get_result(
-                    os.path.join(LOGS_DIR, file_name),
-                    self.render,
-                    self.saved_gradient_param,
-                    self.saved_min,
-                    self.saved_max,
-                    self.saved_filter_type
-                )
+        self.clear_point_cloud_nodes()
+        self.update_point_cloud_nodes(visible_layers)
 
-                if isinstance(result, NodePath):
-                    self.point_cloud_nodes.append(result)
-
-            print(f"Обновление завершено: {len(self.point_cloud_nodes)} облаков точек перерисовано.")
+        print(f"Обновление завершено: {len(self.point_cloud_nodes)} облаков точек перерисовано.")
 
     def back_from_point_view(self):
         for node in self.point_cloud_nodes:
@@ -274,29 +260,10 @@ class LogicApp(
         """Обновляет отображаемые слои на основе значения слайдера."""
         visible_layers = int((slider_value / 100) * len(self.file_names))
         print(f"Обновление слоев: отображаем 0-{visible_layers - 1} слоев.")
-        for node in self.point_cloud_nodes:
-            if isinstance(node, tuple):
-                node_path = node[0]
-            else:
-                node_path = node
 
-            if isinstance(node_path, NodePath):
-                node_path.removeNode()
+        self.clear_point_cloud_nodes()
+        self.update_point_cloud_nodes(visible_layers)
 
-        self.point_cloud_nodes.clear()
-
-        for i, file_name in enumerate(self.file_names[:visible_layers]):
-            result = get_result(
-                os.path.join(LOGS_DIR, file_name),
-                self.render,
-                self.saved_gradient_param,
-                self.saved_min,
-                self.saved_max,
-                self.saved_filter_type
-            )
-
-            if isinstance(result, NodePath):
-                self.point_cloud_nodes.append(result)
         print(f"Отображается {len(self.point_cloud_nodes)} слоев.")
 
     def close_error_dialog(self, _):
@@ -347,3 +314,31 @@ class LogicApp(
         self.ignore("mouse3")  # Игнорируем ПКМ
         self.ignore("wheel_up")  # Игнорируем прокрутку вверх
         self.ignore("wheel_down")
+
+    def clear_point_cloud_nodes(self):
+        """Очищает все текущие облака точек."""
+        for node in self.point_cloud_nodes:
+            if isinstance(node, tuple):
+                node_path = node[0]
+            else:
+                node_path = node
+
+            if isinstance(node_path, NodePath):
+                node_path.removeNode()
+
+        self.point_cloud_nodes.clear()
+
+    def update_point_cloud_nodes(self, visible_layers):
+        """Обновляет облака точек на основе видимых слоев и текущих параметров."""
+        for i, file_name in enumerate(self.file_names[:visible_layers]):
+            result = get_result(
+                os.path.join(LOGS_DIR, file_name),
+                self.render,
+                self.saved_gradient_param,
+                self.saved_min,
+                self.saved_max,
+                self.saved_filter_type
+            )
+
+            if isinstance(result, NodePath):
+                self.point_cloud_nodes.append(result)
