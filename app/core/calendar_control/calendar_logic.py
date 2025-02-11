@@ -51,7 +51,6 @@ class CalendarLogic:
         self.update_calendar()
 
     def select_day(self, i, j):
-
         """Выбирает день в календаре"""
         first_day_weekday = (datetime(self.year, self.month, 1).weekday() + 1) % 7
         day = (i * 7) + j - first_day_weekday + 1

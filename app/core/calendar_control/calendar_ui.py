@@ -18,6 +18,16 @@ class CalendarUI:
             pos=(0, 0, 0.25),
         )
         self.frame.hide()
+        self.start_help_text = DirectLabel(
+            text='Выбирите даты с какого по какое вы хотите увидеть УП',
+            scale=0.08,
+            pos=(0, 0, 0.7),
+            text_font=custom_font,
+            frameColor=(0, 0, 0, 0),
+            relief=None,
+            text_fg=self.config.background_color_choice,
+            text_bg=self.config.background_color_not_active,
+        )
         self.open_calendar_first = DirectButton(
             text="Начальная дата",
             scale=0.15,
@@ -175,12 +185,14 @@ class CalendarUI:
         self.frame.show()
         self.open_calendar_first.hide()
         self.open_calendar_second.hide()
+        self.start_help_text.hide()
 
     def hide(self):
         """Скрывает календарь и показывает кнопки выбора дат"""
         self.frame.hide()
         self.open_calendar_first.show()
         self.open_calendar_second.show()
+        self.start_help_text.show()
 
     def calendar_popup(self, calendar_type):
         """Открывает календарь и скрывает кнопки выбора даты"""

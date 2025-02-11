@@ -69,6 +69,7 @@ class LogicApp(
             self.start_frame.hide()
             self.date_frame.show()
             self.scroll_frame.show()
+            self.calendar_app.ui.start_help_text.hide()
             self.save_data_h = start_date
             self.save_data_l = end_date
             self.load_file_list(start_date=start_date, end_date=end_date)

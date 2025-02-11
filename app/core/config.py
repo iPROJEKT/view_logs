@@ -9,7 +9,7 @@ class Config:
         self.splash_logo = 'static/img/trinititech.jpg'
         self.text_color = (1, 1, 1, 1)
         self.background_color_choice = (46 / 255, 46 / 255, 46 / 255, 1)
-        self.background_color_not_active = (0.1, 0.1, 0.1, 0.8)
+        self.background_color_not_active = (0, 0, 0, 0.8)
 
     def GetBool(self, key, default=False):
         return self.config.get(key, default)
