@@ -4,6 +4,7 @@ from datetime import datetime
 
 from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectLabel import DirectLabel
+from direct.gui.DirectOptionMenu import DGG
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import NodePath
 
@@ -51,6 +52,8 @@ class LogicApp(
         SliderUI.__init__(self, self)
         TextUI.__init__(self, self, self.config)
         self.calendar_app = CalendarApp(self.config)
+        self.help_button.bind(DGG.ENTER, self.show_hover)
+        self.help_button.bind(DGG.EXIT, self.hide_hover)
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
@@ -343,3 +346,9 @@ class LogicApp(
 
             if isinstance(result, NodePath):
                 self.point_cloud_nodes.append(result)
+
+    def show_hover(self, event):
+        self.hover_label.show()
+
+    def hide_hover(self, event):
+        self.hover_label.hide()

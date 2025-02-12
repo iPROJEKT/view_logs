@@ -10,7 +10,7 @@ class ButtonsUI:
 
         self.confirm_button = DirectButton(
             text="Выбрать",
-            scale=0.1,
+            scale=self.config.scale_big,
             pos=(1, 0, -0.1),
             command=self.parent.on_date_confirmed,
             text_font=custom_font,
@@ -21,7 +21,7 @@ class ButtonsUI:
         )
         self.back_button = DirectButton(
             text="Назад",
-            scale=0.1,
+            scale=self.config.scale_big,
             pos=(-1, 0, 0.7),
             command=self.parent.on_back_button_pressed,
             text_font=custom_font,
@@ -32,7 +32,7 @@ class ButtonsUI:
         )
         self.done_button = DirectButton(
             text="Готово",
-            scale=0.1,
+            scale=self.config.scale_big,
             pos=(1, 0, -0.7),
             command=self.parent.on_done_button_pressed,
             text_font=custom_font,
@@ -43,7 +43,7 @@ class ButtonsUI:
         )
         self.refresh_button = DirectButton(
             text="Обновить",
-            scale=0.08,
+            scale=self.config.scale_mini,
             pos=(0.44, 0, -0.03),
             command=self.parent.refresh_gradient,
             text_font=custom_font,
@@ -54,7 +54,7 @@ class ButtonsUI:
         )
         self.back_button_from_point_view = DirectButton(
             text="Назад",
-            scale=0.1,
+            scale=self.config.scale_big,
             pos=(-1, 0, 0.7),
             text_font=custom_font,
             command=self.parent.back_from_point_view,
@@ -63,7 +63,7 @@ class ButtonsUI:
             text_bg=self.config.background_color_choice
         )
         self.select_all_up = DirectButton(
-            scale=0.09,
+            scale=self.config.scale_mini,
             text='Выбрать все',
             text_font=custom_font,
             relief=None,
@@ -73,4 +73,15 @@ class ButtonsUI:
             pos=(0.9, 0, 0.7),
             command=self.parent.select_all_up
         )
+        self.help_button = DirectButton(
+            text="Подсказка",
+            scale=self.config.scale_mini,
+            text_font=custom_font,
+            relief=None,
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_not_active,
+            parent=self.parent.info_frame,
+            pos=(-0.15, 0, 1.3),
+        )
+
         self.back_button_from_point_view.hide()

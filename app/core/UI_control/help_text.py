@@ -1,4 +1,5 @@
 from direct.gui.DirectLabel import DirectLabel
+from panda3d.core import TextNode
 
 
 class TextUI:
@@ -52,3 +53,13 @@ class TextUI:
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_not_active,
         )
+        self.hover_label = DirectLabel(
+            text='All - показывает все точки\nInto - показывает точки внутри диапазона\nOut - точки за пределами диапазона\nЗадавать диапазон ...max и ...min',
+            scale=0.07,
+            frameColor=(1, 1, 1, 0.8),
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_not_active,
+            pos=(0, 0, 0.1),
+            text_font=custom_font,
+        )
+        self.hover_label.hide()
