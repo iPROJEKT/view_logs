@@ -54,7 +54,7 @@ class TextUI:
             text_bg=self.config.background_color_not_active,
         )
         self.hover_label = DirectLabel(
-            text='All - показывает все точки\nInto - показывает точки внутри диапазона\nOut - точки за пределами диапазона\nЗадавать диапазон ...max и ...min',
+            text=self.config.hover_for_pep_8(),
             scale=0.07,
             frameColor=(1, 1, 1, 0.8),
             text_fg=self.config.text_color,

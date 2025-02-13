@@ -19,7 +19,7 @@ class CalendarUI:
         )
         self.frame.hide()
         self.start_help_text = DirectLabel(
-            text='Выбирите даты с какого по какое вы хотите увидеть УП',
+            text='Выберите диапазон дат для отображения УП',
             scale=0.08,
             pos=(0, 0, 0.7),
             text_font=custom_font,

@@ -18,5 +18,13 @@ class Config:
         self.item_frame_color_black = (0.3, 0.3, 0.3, 1)
         self.frame_size_optional_menu = (-1.7, 1.7, -0.65, 0.65)
 
+    @staticmethod
+    def hover_for_pep_8():
+        text = 'All - показывает все точки\n'
+        text += 'Out - точки за пределами диапазона\n'
+        text += 'Into - показывает точки внутри диапазона\n'
+        text += 'Задавать диапазон ...max и ...min'
+        return text
+
     def GetBool(self, key, default=False):
         return self.config.get(key, default)

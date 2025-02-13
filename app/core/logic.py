@@ -86,6 +86,7 @@ class LogicApp(
         for label in self.labels:
             label.destroy()
         self.labels.clear()
+        self.calendar_app.ui.start_help_text.show()
         self.calendar_app.ui.open_calendar_first.show()
         self.calendar_app.ui.open_calendar_second.show()
         self.date_frame.hide()
@@ -341,7 +342,9 @@ class LogicApp(
                 self.saved_gradient_param,
                 self.saved_min,
                 self.saved_max,
-                self.saved_filter_type
+                self.saved_filter_type,
+                float(self.size_input.get()),
+                self.spliter_input.get()
             )
 
             if isinstance(result, NodePath):

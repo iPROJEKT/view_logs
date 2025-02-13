@@ -46,6 +46,18 @@ class FramesUI:
             pos=(0.4, 0, 0.31),
             parent=self.info_frame
         )
+        self.size_frame = DirectFrame(
+            frameColor=self.config.background_color_choice,
+            frameSize=(-0.18, 0.18, -0.06, 0.06),
+            pos=(0.4, 0, 0.44),
+            parent=self.info_frame
+        )
+        self.spliter_frame = DirectFrame(
+            frameColor=self.config.background_color_choice,
+            frameSize=(-0.18, 0.18, -0.06, 0.06),
+            pos=(0.4, 0, 0.6),
+            parent=self.info_frame
+        )
         self.calendar_frame.hide()
         self.scroll_frame.hide()
         self.info_frame.hide()

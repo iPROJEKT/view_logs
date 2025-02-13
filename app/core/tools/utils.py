@@ -6,7 +6,7 @@ from panda3d.core import (
     GeomVertexData,
     GeomVertexFormat,
     Geom, GeomVertexWriter,
-    GeomPoints, GeomNode, Point3
+    GeomPoints, GeomNode, Point3,
 )
 
 from app.core.UI_control.variables import Variables
@@ -117,7 +117,7 @@ def generate_roygb_gradient(length_grad):
     return royg_gradient
 
 
-def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent):
+def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
     """Создает облако точек с градиентом."""
     vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
     vertex_writer = GeomVertexWriter(vertex_data, "vertex")
@@ -136,23 +136,37 @@ def create_point_cloud(data, param_normalized, royg_gradient, length_grad, paren
 
     geom_node = GeomNode("log_point_cloud_node")
     geom_node.addGeom(points)
+
     node_path = parent.attachNewNode(geom_node)
+    node_path.setRenderModeThickness(point_size)
 
     return node_path
 
 
 def load_logs_and_create_point_cloud(
-        file_path, parent,
-        gradient_param='I',
-        length_grad=256,
-        custom_min=None,
-        custom_max=None,
-        filter_type="All"
+    file_path, parent,
+    gradient_param='I',
+    length_grad=256,
+    custom_min=None,
+    custom_max=None,
+    filter_type="All",
+    point_size=1.0,
+    point_step=1
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
+    if int(point_step) <= 0:  # Проверяем шаг
+        print("Ошибка: значение point_step должно быть больше 0. Установлено значение по умолчанию: 1.")
+        point_step = 1
+
     data, i_values, u_values, wfs_values = load_log_data(file_path)
     if not data:
         return None, None, None
+    data = data[::int(point_step)]
+    i_values = i_values[::int(point_step)]
+    u_values = u_values[::int(point_step)]
+    wfs_values = wfs_values[::int(point_step)]
+
+    Variables.center = calculate_center(data)
 
     param_values = get_gradient_param_values(gradient_param, i_values, u_values, wfs_values)
     if param_values is None:
@@ -170,7 +184,7 @@ def load_logs_and_create_point_cloud(
         return None, None, None
 
     royg_gradient = generate_roygb_gradient(length_grad)
-    node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent)
+    node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size)
     return node_path, [point[2] for point in data], (z_min, z_max)
 
 
@@ -219,7 +233,7 @@ def calculate_center(points):
     return Point3(x_total / num_points, y_total / num_points, z_total / num_points)
 
 
-def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type):
+def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step):
     node_path = None
     result = load_logs_and_create_point_cloud(
         file_path=file_path,
@@ -227,7 +241,9 @@ def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter
         gradient_param=gradient_param,
         custom_min=custom_min,
         custom_max=custom_max,
-        filter_type=filter_type
+        filter_type=filter_type,
+        point_size=size,
+        point_step=point_step
     )
     if result:
         if isinstance(result, tuple):
