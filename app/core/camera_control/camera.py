@@ -1,8 +1,9 @@
 from math import cos, sin, radians
 
-from panda3d.core import WindowProperties, Vec3, Point3
+from panda3d.core import WindowProperties, Vec3, Point3, Quat
 
 from app.core.UI_control.variables import Variables
+from app.core.tools.utils import load_log_data, calculate_center
 
 
 class CameraControl:
@@ -17,11 +18,11 @@ class CameraControl:
         self.zoom_speed = 10
         self.rotation_speed = 0.1
         self.rotation_speed_for_anchor = 0.1
-        self.camera_mode = 0  # 0 - обычный режим,0 1 - вращение вокруг якорной точки
-        self.anchor_point = Point3(Variables.center)  # Якорная точка для режима вращения
+        self.camera_mode = 0
         self.anchor_distance = 100
         self.current_p = 0
         self.current_h = 0
+        self.anchor_point = None
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -43,21 +44,6 @@ class CameraControl:
         else:
             print("Обычный режим камеры активирован.")
 
-    def set_anchor_point(self, point_cloud):
-        """Устанавливает якорную точку в центр облака точек."""
-        if not point_cloud:
-            print("Ошибка: облако точек пустое.")
-            return
-
-        x = sum(p[0] for p in point_cloud) / len(point_cloud)
-        y = sum(p[1] for p in point_cloud) / len(point_cloud)
-        z = sum(p[2] for p in point_cloud) / len(point_cloud)
-
-        self.anchor_point = Point3(x, y, z)
-        self.anchor_distance = (self.base.camera.getPos() - self.anchor_point).length()
-
-        print(f"Якорная точка установлена: {self.anchor_point}")
-
     def ignore_first_move(self):
         if self.ignore_first_mouse_movement:
             self.ignore_first_mouse_movement = False
@@ -71,7 +57,6 @@ class CameraControl:
         self.dx = mouse_data.getX() - center_x
         self.dy = mouse_data.getY() - center_y
 
-        # Ограничиваем значения dx и dy
         self.dx = max(-100, min(100, self.dx))
         self.dy = max(-100, min(100, self.dy))
 
@@ -119,27 +104,21 @@ class CameraControl:
 
     def handle_anchor_rotation(self):
         self.ignore_first_move()
-
+        self.anchor_point = Point3(Variables.center)
         if self.dx != 0 or self.dy != 0:
-            target_h = (self.current_h + self.dx * self.rotation_speed_for_anchor) % 360
-            target_p = max(-89, min(89, self.current_p + self.dy * self.rotation_speed_for_anchor))
-
-            # Плавное изменение углов
-            self.current_h = self.lerp(self.current_h, target_h, 0.1)
-            self.current_p = self.lerp(self.current_p, target_p, 0.1)
-
-            h_rad = radians(self.current_h)
-            p_rad = radians(self.current_p)
-
+            delta_h = self.dx * self.rotation_speed_for_anchor
+            delta_p = self.dy * self.rotation_speed_for_anchor
+            self.current_p = max(-89, min(89, self.current_p + delta_p))
+            self.current_h = (self.current_h + delta_h) % 360
+            quat_h = Quat()
+            quat_h.setFromAxisAngle(self.current_h, Vec3(0, 0, 1))  # Вращение вокруг оси Z
+            quat_p = Quat()
+            quat_p.setFromAxisAngle(self.current_p, Vec3(1, 0, 0))  # Вращение вокруг оси X
+            total_quat = quat_h * quat_p
             distance = (self.base.camera.getPos() - self.anchor_point).length()
-            new_x = distance * cos(p_rad) * cos(h_rad)
-            new_y = distance * cos(p_rad) * sin(h_rad)
-            new_z = distance * sin(p_rad)
-
-            new_camera_pos = Point3(new_x, new_y, new_z)
+            new_camera_pos = total_quat.xform(Vec3(0, distance, 0))
             self.base.camera.setPos(self.anchor_point + new_camera_pos)
             self.base.camera.lookAt(self.anchor_point)
-
             print(f"[DEBUG] New H: {self.current_h}, New P: {self.current_p}, Camera Pos: {self.base.camera.getPos()}")
 
         self.reset_mouse_position()

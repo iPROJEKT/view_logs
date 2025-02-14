@@ -166,8 +166,6 @@ def load_logs_and_create_point_cloud(
     u_values = u_values[::int(point_step)]
     wfs_values = wfs_values[::int(point_step)]
 
-    Variables.center = calculate_center(data)
-
     param_values = get_gradient_param_values(gradient_param, i_values, u_values, wfs_values)
     if param_values is None:
         return None, None, None
@@ -185,7 +183,7 @@ def load_logs_and_create_point_cloud(
 
     royg_gradient = generate_roygb_gradient(length_grad)
     node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size)
-    return node_path, [point[2] for point in data], (z_min, z_max)
+    return node_path, [point[2] for point in data], (z_min, z_max), data
 
 
 def get_gradient_param_values(gradient_param, i_values, u_values, wfs_values):
@@ -221,6 +219,7 @@ def compute_z_range(data):
 def calculate_center(points):
     """Вычисляет центр по всем точкам."""
     if not points:
+        print("Ошибка: список точек пуст. Центр установлен в (0, 0, 0).")
         return Point3(0, 0, 0)
 
     x_total, y_total, z_total = 0, 0, 0
@@ -230,7 +229,9 @@ def calculate_center(points):
         z_total += point[2]
 
     num_points = len(points)
-    return Point3(x_total / num_points, y_total / num_points, z_total / num_points)
+    center = Point3(x_total / num_points, y_total / num_points, z_total / num_points)
+    print(f"[DEBUG] Центр вычислен: {center}")
+    return center
 
 
 def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step):
