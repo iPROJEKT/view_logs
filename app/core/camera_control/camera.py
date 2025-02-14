@@ -1,4 +1,9 @@
-from panda3d.core import WindowProperties, Vec3
+from math import cos, sin, radians
+
+from panda3d.core import WindowProperties, Vec3, Point3, Quat
+
+from app.core.UI_control.variables import Variables
+from app.core.tools.utils import load_log_data, calculate_center
 
 
 class CameraControl:
@@ -11,7 +16,13 @@ class CameraControl:
         self.dx = 0
         self.dy = 0
         self.zoom_speed = 10
-        self.rotation_speed = 0.2
+        self.rotation_speed = 0.1
+        self.rotation_speed_for_anchor = 0.1
+        self.camera_mode = 0
+        self.anchor_distance = 100
+        self.current_p = 0
+        self.current_h = 0
+        self.anchor_point = None
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -22,7 +33,16 @@ class CameraControl:
         self.base.accept('mouse1-up', self.on_left_mouse_release)
         self.base.accept('wheel_up', self.on_wheel_up)
         self.base.accept('wheel_down', self.on_wheel_down)
+        self.base.accept('n', self.toggle_camera_mode)
         self.base.taskMgr.add(self.update_camera_task, "UpdateCameraTask")
+
+    def toggle_camera_mode(self):
+        """Переключение между режимами камеры."""
+        self.camera_mode = (self.camera_mode + 1) % 2
+        if self.camera_mode == 1:
+            print("Режим вращения вокруг якорной точки активирован.")
+        else:
+            print("Обычный режим камеры активирован.")
 
     def ignore_first_move(self):
         if self.ignore_first_mouse_movement:
@@ -31,8 +51,16 @@ class CameraControl:
             return
 
         mouse_data = self.base.win.getPointer(0)
-        self.dx = mouse_data.getX() - self.base.win.getProperties().getXSize() // 2
-        self.dy = mouse_data.getY() - self.base.win.getProperties().getYSize() // 2
+        center_x = self.base.win.getProperties().getXSize() // 2
+        center_y = self.base.win.getProperties().getYSize() // 2
+
+        self.dx = mouse_data.getX() - center_x
+        self.dy = mouse_data.getY() - center_y
+
+        self.dx = max(-100, min(100, self.dx))
+        self.dy = max(-100, min(100, self.dy))
+
+        print(f"[DEBUG] Mouse moved: dx={self.dx}, dy={self.dy}")
 
     def set_initial_camera_position(self):
         """Устанавливаем начальную позицию и ориентацию камеры."""
@@ -58,13 +86,42 @@ class CameraControl:
         self.base.win.requestProperties(props)
 
     def update_camera_task(self, task):
-        if self.mouse_is_pressed:
-            self.handle_camera_pan()
+        if self.camera_mode == 0:  # Обычный режим камеры
+            if self.mouse_is_pressed:
+                self.handle_camera_pan()
 
-        if self.left_mouse_is_pressed:
-            self.handle_camera_rotation()
+            if self.left_mouse_is_pressed:
+                self.handle_camera_rotation()
+
+        elif self.camera_mode == 1:  # Режим вращения вокруг якорной точки
+            if self.left_mouse_is_pressed:
+                self.handle_anchor_rotation()
 
         return task.cont
+
+    def lerp(self, a, b, t):
+        return a + (b - a) * t
+
+    def handle_anchor_rotation(self):
+        self.ignore_first_move()
+        self.anchor_point = Point3(Variables.center)
+        if self.dx != 0 or self.dy != 0:
+            delta_h = self.dx * self.rotation_speed_for_anchor
+            delta_p = self.dy * self.rotation_speed_for_anchor
+            self.current_p = max(-89, min(89, self.current_p + delta_p))
+            self.current_h = (self.current_h + delta_h) % 360
+            quat_h = Quat()
+            quat_h.setFromAxisAngle(self.current_h, Vec3(0, 0, 1))  # Вращение вокруг оси Z
+            quat_p = Quat()
+            quat_p.setFromAxisAngle(self.current_p, Vec3(1, 0, 0))  # Вращение вокруг оси X
+            total_quat = quat_h * quat_p
+            distance = (self.base.camera.getPos() - self.anchor_point).length()
+            new_camera_pos = total_quat.xform(Vec3(0, distance, 0))
+            self.base.camera.setPos(self.anchor_point + new_camera_pos)
+            self.base.camera.lookAt(self.anchor_point)
+            print(f"[DEBUG] New H: {self.current_h}, New P: {self.current_p}, Camera Pos: {self.base.camera.getPos()}")
+
+        self.reset_mouse_position()
 
     def handle_camera_pan(self):
         """Перемещение камеры по ПКМ с учётом ориентации."""
@@ -77,7 +134,7 @@ class CameraControl:
             up_vector = self.base.camera.getQuat().getUp()
 
             move_right = right_vector * self.dx * 0.1
-            move_up = up_vector * self.dy * 0.1
+            move_up = up_vector * (-self.dy) * 0.1
 
             new_pos = self.base.camera.getPos() + move_right + move_up
 
@@ -105,10 +162,15 @@ class CameraControl:
         self.reset_mouse_position()
 
     def reset_mouse_position(self):
-        """Перемещает указатель мыши в центр экрана."""
         center_x = self.base.win.getProperties().getXSize() // 2
         center_y = self.base.win.getProperties().getYSize() // 2
         self.base.win.movePointer(0, center_x, center_y)
+
+        # Проверяем, успешно ли переместился указатель
+        mouse_data = self.base.win.getPointer(0)
+        print(
+            f"[DEBUG] Mouse reset: Current position ({mouse_data.getX()}, {mouse_data.getY()}), Center ({center_x}, {center_y})"
+        )
 
     def on_mouse_press(self):
         self.ignore_first_mouse_movement = False
@@ -147,8 +209,8 @@ class CameraControl:
 
     def zoom_camera(self, direction):
         """
-        Зум камеры по направлению её взгляда.
-        :param direction: 1 для приближения, -1 для отдаления
+        Зум камеры.
+        :param direction: 1 для приближения, -1 для отдаления.
         """
         forward_vector = self.base.camera.getQuat().getForward()
         current_pos = self.base.camera.getPos()
@@ -158,3 +220,7 @@ class CameraControl:
 
         self.base.camera.setPos(new_pos)
         print(f"[ZOOM] Camera position: {self.base.camera.getPos()}")
+
+        print(
+            f"[ZOOM ANCHOR] Anchor distance: {self.anchor_distance}, Camera position: {self.base.camera.getPos()}"
+        )

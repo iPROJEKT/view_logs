@@ -13,7 +13,7 @@ from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
 from app.core.camera_control.camera import CameraControl
 from app.core.tools.const import LOGS_DIR
-from app.core.config import Config
+from app.core.config_app import ConfigApp
 from app.core.UI_control.variables import Variables
 from app.core.UI_control.buttons import ButtonsUI
 from app.core.UI_control.error import ErrorDialogsUI
@@ -22,7 +22,8 @@ from app.core.UI_control.image import ImageUI
 from app.core.UI_control.input_fields import InputFieldsUI
 from app.core.UI_control.pop_menu import PopMenuUI
 from app.core.splash_screen_control.screen_saver_logic import SplashScreenLogic
-from app.core.tools.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result
+from app.core.tools.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result, \
+    calculate_center
 
 
 class LogicApp(
@@ -39,7 +40,8 @@ class LogicApp(
 ):
     def __init__(self):
         ShowBase.__init__(self)
-        self.config = Config()
+        self.config = ConfigApp()
+        self.setBackgroundColor(0, 0, 0)
         SplashScreenLogic.__init__(self, self, self.config)
         FramesUI.__init__(self, self.config)
         InputFieldsUI.__init__(self, self, self.config)
@@ -86,6 +88,7 @@ class LogicApp(
         for label in self.labels:
             label.destroy()
         self.labels.clear()
+        self.calendar_app.ui.start_help_text.show()
         self.calendar_app.ui.open_calendar_first.show()
         self.calendar_app.ui.open_calendar_second.show()
         self.date_frame.hide()
@@ -164,6 +167,7 @@ class LogicApp(
             print(f"Выбранные файлы: {self.file_names}")
 
         self.point_cloud_nodes = []
+        all_points = []  # Список для хранения всех точек
 
         gradient_param = self.magnitude_menu.get()
         filter_type = self.magnitude_menu.get()  # Получаем выбранный фильтр
@@ -180,6 +184,16 @@ class LogicApp(
                 print(f"Файл {file_name}: облако точек добавлено.")
                 self.point_cloud_nodes.append(node_path)
                 self.info_frame.show()
+
+                # Добавляем точки из текущего файла в общий список
+                if isinstance(node_path, tuple):
+                    points = node_path[-1]  # Предполагаем, что точки находятся в последнем элементе кортежа
+                    all_points.extend(points)
+
+        # Вычисляем центр для всех точек
+        if all_points:
+            Variables.center = calculate_center(all_points)
+            print(f"[DEBUG] Центр всех точек: {Variables.center}")
 
         if self.point_cloud_nodes:
             self.back_button_from_point_view.show()
@@ -341,7 +355,9 @@ class LogicApp(
                 self.saved_gradient_param,
                 self.saved_min,
                 self.saved_max,
-                self.saved_filter_type
+                self.saved_filter_type,
+                float(self.size_input.get()),
+                self.spliter_input.get()
             )
 
             if isinstance(result, NodePath):

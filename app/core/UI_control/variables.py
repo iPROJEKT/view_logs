@@ -6,7 +6,6 @@ class Variables:
         self.file_names = []
         self.point_cloud_data = {}
         self.num_layers = 10
-        self.setBackgroundColor(0, 0, 0)
         self.saved_gradient_param = None
         self.saved_filter_type = None
         self.saved_min = None
@@ -21,4 +20,4 @@ class Variables:
         self.real_min_u = None
         self.real_max_wfs = None
         self.real_min_wfs = None
-
+        self.center = None

@@ -28,6 +28,28 @@ class InputFieldsUI:
             relief=DGG.FLAT,
             text_align=TextNode.ACenter
         )
+        self.size_input = DirectEntry(
+            scale=0.1,
+            pos=(0, 0, 0),
+            parent=self.parent.size_frame,
+            width=3,
+            initialText="0",
+            text_fg=self.config.text_color,
+            frameColor=self.config.background_color_choice,
+            relief=DGG.FLAT,
+            text_align=TextNode.ACenter,
+        )
+        self.spliter_input = DirectEntry(
+            scale=0.1,
+            pos=(0, 0, 0),
+            parent=self.parent.spliter_frame,
+            width=3,
+            initialText="0",
+            text_fg=self.config.text_color,
+            frameColor=self.config.background_color_choice,
+            relief=DGG.FLAT,
+            text_align=TextNode.ACenter,
+        )
         self.number_input_top.hide()
         self.number_input_bottom.hide()
 
