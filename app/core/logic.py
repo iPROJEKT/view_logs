@@ -13,7 +13,7 @@ from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
 from app.core.camera_control.camera import CameraControl
 from app.core.tools.const import LOGS_DIR
-from app.core.config import Config
+from app.core.config_app import ConfigApp
 from app.core.UI_control.variables import Variables
 from app.core.UI_control.buttons import ButtonsUI
 from app.core.UI_control.error import ErrorDialogsUI
@@ -40,7 +40,7 @@ class LogicApp(
 ):
     def __init__(self):
         ShowBase.__init__(self)
-        self.config = Config()
+        self.config = ConfigApp()
         self.setBackgroundColor(0, 0, 0)
         SplashScreenLogic.__init__(self, self, self.config)
         FramesUI.__init__(self, self.config)

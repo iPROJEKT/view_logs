@@ -8,8 +8,6 @@ from panda3d.core import (
     Geom, GeomVertexWriter,
     GeomPoints, GeomNode, Point3,
 )
-
-from app.core.UI_control.variables import Variables
 from app.core.tools.const import (
     REGULAR_FOR_MATCH,
     REGULAR_FOR_SEARCH,

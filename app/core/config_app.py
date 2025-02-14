@@ -1,7 +1,9 @@
-class Config:
+class ConfigApp:
     def __init__(self):
         self.config = {
             'disable-sticky-keys': False,
+            'gl-debug': True,
+            'gl-debug-errors': True
         }
         self.image_gradient_green_yellow_red = 'static/img/r_o_y_g_gradient.png'
         self.image_for_logo = 'static/img/trinititech.jpg'
