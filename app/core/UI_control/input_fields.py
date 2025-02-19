@@ -30,9 +30,9 @@ class InputFieldsUI:
         )
         self.size_input = DirectEntry(
             scale=0.1,
-            pos=(0, 0, 0),
-            parent=self.parent.size_frame,
-            width=3,
+            pos=(0.25, 0, -0.33),
+            parent=self.parent.left_user_frame,
+            width=3.43,
             initialText="0",
             text_fg=self.config.text_color,
             frameColor=self.config.background_color_choice,
@@ -41,9 +41,9 @@ class InputFieldsUI:
         )
         self.spliter_input = DirectEntry(
             scale=0.1,
-            pos=(0, 0, 0),
-            parent=self.parent.spliter_frame,
-            width=3,
+            pos=(0.25, 0, -0.17),
+            parent=self.parent.left_user_frame,
+            width=3.43,
             initialText="0",
             text_fg=self.config.text_color,
             frameColor=self.config.background_color_choice,

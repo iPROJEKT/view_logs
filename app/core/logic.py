@@ -47,7 +47,7 @@ class LogicApp(
         InputFieldsUI.__init__(self, self, self.config)
         ButtonsUI.__init__(self, self, self.config)
         ErrorDialogsUI.__init__(self, self, self.config)
-        ImageUI.__init__(self, self.config)
+        ImageUI.__init__(self, self, self.config)
         InputFieldsUI.__init__(self, self, self.config)
         PopMenuUI.__init__(self, self, self.config)
         Variables.__init__(self)
@@ -164,6 +164,10 @@ class LogicApp(
         else:
             self.date_frame.hide()
             self.scroll_frame.hide()
+            self.parameters_up_help.show()
+            self.parameters_down_help.show()
+            self.slider.show()
+            self.alt_cam.show()
             print(f"Выбранные файлы: {self.file_names}")
 
         self.point_cloud_nodes = []
@@ -183,7 +187,7 @@ class LogicApp(
             if node_path:
                 print(f"Файл {file_name}: облако точек добавлено.")
                 self.point_cloud_nodes.append(node_path)
-                self.info_frame.show()
+                self.opent_left_panel_button.show()
 
                 # Добавляем точки из текущего файла в общий список
                 if isinstance(node_path, tuple):
@@ -251,12 +255,18 @@ class LogicApp(
         for label in self.labels:
             label.destroy()
         self.labels.clear()
+        self.slider.hide()
+        self.alt_cam.hide()
         self.save_camera_allowed = False
         self.disable_camera_control()
         self.back_button_from_point_view.hide()
         self.back_button.show()
+        self.parameters_up_help.hide()
+        self.opent_left_panel_button.hide()
+        self.compass_node.hide()
+        self.axes_node.hide()
+        self.parameters_down_help.hide()
         self.image_label.hide()
-        self.info_frame.hide()
         self.number_input_top.hide()
         self.number_input_bottom.hide()
         self.date_frame.show()
@@ -368,3 +378,21 @@ class LogicApp(
 
     def hide_hover(self, event):
         self.hover_label.hide()
+
+    def show_panet(self):
+        self.closed_left_panel_button.show()
+        self.left_user_frame.show()
+        self.slider.hide()
+        self.alt_cam.hide()
+        self.compass_node.hide()
+        self.opent_left_panel_button.hide()
+        self.back_button_from_point_view.hide()
+
+    def hide_panel(self):
+        self.closed_left_panel_button.hide()
+        self.left_user_frame.hide()
+        self.compass_node.show()
+        self.slider.show()
+        self.alt_cam.show()
+        self.opent_left_panel_button.show()
+        self.back_button_from_point_view.show()

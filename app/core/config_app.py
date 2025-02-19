@@ -9,6 +9,7 @@ class ConfigApp:
         self.image_for_logo = 'static/img/trinititech.jpg'
         self.custom_font = 'static/fonts/Ubuntu-Regular.ttf'
         self.splash_logo = 'static/img/trinititech.jpg'
+        self.logo_in_scene = 'static/img/logo_in_scene.jpg'
         self.text_color = (1, 1, 1, 1)
         self.background_color_choice = (46 / 255, 46 / 255, 46 / 255, 1)
         self.background_color_not_active = (0, 0, 0, 0.8)

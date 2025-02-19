@@ -43,11 +43,11 @@ class ButtonsUI:
         )
         self.refresh_button = DirectButton(
             text="Обновить",
-            scale=self.config.scale_mini,
-            pos=(0.44, 0, -0.03),
+            scale=self.config.scale_big,
+            pos=(0, 0, -0.9),
             command=self.parent.refresh_gradient,
             text_font=custom_font,
-            parent=self.parent.info_frame,
+            parent=self.parent.left_user_frame,
             relief=None,
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_choice
@@ -80,8 +80,30 @@ class ButtonsUI:
             relief=None,
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_not_active,
-            parent=self.parent.info_frame,
+            parent=self.parent.left_user_frame,
             pos=(-0.15, 0, 1.3),
         )
-
+        self.opent_left_panel_button = DirectButton(
+            text=">",
+            scale=0.2,
+            pos=(-1.2, 0, 0),
+            text_font=custom_font,
+            command=self.parent.show_panet,
+            relief=None,
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_choice
+        )
+        self.closed_left_panel_button = DirectButton(
+            text="<",
+            scale=0.1,
+            pos=(0.5, 0, 0.8),
+            text_font=custom_font,
+            command=self.parent.hide_panel,
+            relief=None,
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_choice,
+            parent=self.parent.left_user_frame,
+        )
+        self.closed_left_panel_button.hide()
+        self.opent_left_panel_button.hide()
         self.back_button_from_point_view.hide()

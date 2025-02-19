@@ -29,36 +29,24 @@ class FramesUI:
             parent=self.date_frame,
             autoHideScrollBars=True,
         )
-        self.info_frame = DirectFrame(
-            frameColor=self.config.background_color_not_active,
-            frameSize=(-0.5, 0.7, -0.1, 0.4),
-            pos=(-0.8, 0, -0.8),
+        self.left_user_frame = DirectFrame(
+            frameColor=(33/255, 33/255, 33/255, 1),
+            frameSize=(-0.45, 0.45, -1, 1),
+            pos=(-0.89, 0, 0),
         )
         self.filter_frame = DirectFrame(
             frameColor=self.config.background_color_choice,
-            frameSize=(-0.18, 0.18, -0.06, 0.06),
-            pos=(0.4, 0, 0.18),
-            parent=self.info_frame
+            frameSize=(-0.18, 0.18, -0.07, 0.07),
+            pos=(0.25, 0, -0.6),
+            parent=self.left_user_frame
         )
         self.value_frame = DirectFrame(
             frameColor=self.config.background_color_choice,
-            frameSize=(-0.18, 0.18, -0.06, 0.06),
-            pos=(0.4, 0, 0.31),
-            parent=self.info_frame
+            frameSize=(-0.18, 0.18, -0.07, 0.07),
+            pos=(0.25, 0, -0.45),
+            parent=self.left_user_frame
         )
-        self.size_frame = DirectFrame(
-            frameColor=self.config.background_color_choice,
-            frameSize=(-0.18, 0.18, -0.06, 0.06),
-            pos=(0.4, 0, 0.44),
-            parent=self.info_frame
-        )
-        self.spliter_frame = DirectFrame(
-            frameColor=self.config.background_color_choice,
-            frameSize=(-0.18, 0.18, -0.06, 0.06),
-            pos=(0.4, 0, 0.6),
-            parent=self.info_frame
-        )
+        self.left_user_frame.hide()
         self.calendar_frame.hide()
         self.scroll_frame.hide()
-        self.info_frame.hide()
         self.date_frame.hide()
