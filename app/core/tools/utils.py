@@ -7,6 +7,7 @@ from panda3d.core import (
     GeomVertexFormat,
     Geom, GeomVertexWriter,
     GeomPoints, GeomNode, Point3,
+    LineSegs
 )
 from app.core.tools.const import (
     REGULAR_FOR_MATCH,
@@ -115,6 +116,40 @@ def generate_roygb_gradient(length_grad):
     return royg_gradient
 
 
+def create_lines_cloud(data, param_normalized, royg_gradient, length_grad, parent, line_thickness=1.0):
+    """Создает облако линий с градиентом."""
+    if len(data) < 2:
+        print("Ошибка: недостаточно точек для построения линий.")
+        return None
+
+    line_segs = LineSegs()
+    line_segs.setThickness(line_thickness)
+
+    for i in range(len(data) - 1):
+        # Начало и конец линии
+        start_point = data[i]
+        end_point = data[i + 1]
+
+        # Градиентный цвет для начальной и конечной точки
+        start_norm = param_normalized[i]
+        end_norm = param_normalized[i + 1]
+
+        start_index = int(max(0, min(start_norm * (length_grad - 1), length_grad - 1)))
+        end_index = int(max(0, min(end_norm * (length_grad - 1), length_grad - 1)))
+
+        start_color = royg_gradient[start_index]
+        end_color = royg_gradient[end_index]
+
+        line_segs.setColor(start_color[2], start_color[1], start_color[0], 1.0)
+        line_segs.moveTo(*start_point)
+        line_segs.setColor(end_color[2], end_color[1], end_color[0], 1.0)
+        line_segs.drawTo(*end_point)
+
+    node = line_segs.create()
+    node_path = parent.attachNewNode(node)
+    return node_path
+
+
 def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
     """Создает облако точек с градиентом."""
     vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
@@ -149,7 +184,8 @@ def load_logs_and_create_point_cloud(
     custom_max=None,
     filter_type="All",
     point_size=1.0,
-    point_step=1
+    point_step=1,
+    point=True
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
     if int(point_step) <= 0:  # Проверяем шаг
@@ -180,7 +216,16 @@ def load_logs_and_create_point_cloud(
         return None, None, None
 
     royg_gradient = generate_roygb_gradient(length_grad)
-    node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size)
+    if point:
+        node_path = create_point_cloud(
+            data, param_normalized, royg_gradient,
+            length_grad, parent, point_size
+        )
+    else:
+        node_path = create_lines_cloud(
+            data, param_normalized, royg_gradient,
+            length_grad, parent, point_size
+        )
     return node_path, [point[2] for point in data], (z_min, z_max), data
 
 
@@ -232,7 +277,7 @@ def calculate_center(points):
     return center
 
 
-def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step):
+def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step, point):
     node_path = None
     result = load_logs_and_create_point_cloud(
         file_path=file_path,
@@ -242,7 +287,8 @@ def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter
         custom_max=custom_max,
         filter_type=filter_type,
         point_size=size,
-        point_step=point_step
+        point_step=point_step,
+        point=point
     )
     if result:
         if isinstance(result, tuple):

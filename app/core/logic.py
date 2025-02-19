@@ -181,7 +181,8 @@ class LogicApp(
             node_path = load_logs_and_create_point_cloud(
                 file_path, self.render,
                 gradient_param=gradient_param,
-                filter_type=filter_type
+                filter_type=filter_type,
+                point=self.point
             )
 
             if node_path:
@@ -367,7 +368,8 @@ class LogicApp(
                 self.saved_max,
                 self.saved_filter_type,
                 float(self.size_input.get()),
-                self.spliter_input.get()
+                self.spliter_input.get(),
+                self.point,
             )
 
             if isinstance(result, NodePath):
@@ -396,3 +398,16 @@ class LogicApp(
         self.alt_cam.show()
         self.opent_left_panel_button.show()
         self.back_button_from_point_view.show()
+
+    def set_mode_view(self, current_mode):
+        print(f"Mode changed to: {current_mode}")
+        if current_mode == "points":
+            self.points_button["text_bg"] = (33/255, 33/255, 33/255, 1)
+            self.lines_button["text_bg"] = self.config.background_color_choice
+            self.choise_text['text'] = 'Режим отображения: Точки'
+            self.point = True
+        else:
+            self.points_button["text_bg"] = self.config.background_color_choice
+            self.lines_button["text_bg"] = (33/255, 33/255, 33/255, 1)
+            self.choise_text['text'] = 'Режим отображения: Линии'
+            self.point = False

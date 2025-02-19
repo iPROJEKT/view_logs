@@ -59,6 +59,16 @@ class TextUI:
             relief=None,
             text_fg=self.config.text_color,
         )
+        self.choise_text = DirectLabel(
+            text="Режим отображения: Точки",
+            scale=0.06,
+            pos=(0, 0, 0.3),
+            text_font=custom_font,
+            frameColor=(0, 0, 0, 0),
+            parent=self.parent.left_user_frame,
+            relief=None,
+            text_fg=self.config.background_color_not_active,
+        )
         self.parameters_up_help = DirectLabel(
             text="I max",
             scale=0.08,

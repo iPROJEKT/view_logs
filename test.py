@@ -1,66 +1,47 @@
-from direct.showbase.ShowBase import ShowBase
-from direct.gui.DirectGui import DirectButton, DirectFrame, DirectLabel, DGG
+import direct.directbase.DirectStart
+from direct.gui.OnscreenText import OnscreenText
+from direct.gui.DirectGui import DirectButton
+from panda3d.core import TextNode
 
+# Переменная для хранения текущего состояния
+current_mode = "points"  # "points" или "lines"
 
-class TooltipApp(ShowBase):
-    def __init__(self):
-        ShowBase.__init__(self)
+# Текст, отображающий текущий режим
+textObject = OnscreenText(text=f"Current Mode: {current_mode.title()}",
+                          pos=(0.0, 0.8), scale=0.07,
+                          fg=(1, 1, 1, 1), align=TextNode.ACenter,
+                          mayChange=True)
 
-        custom_font = self.loader.loadFont('static/fonts/Ubuntu-Regular.ttf')
-        self.help_button = DirectButton(
-            text="?",
-            scale=0.1,
-            pos=(0.9, 0, 0.8),
-            command=self.show_tooltip,
-            text_font=custom_font,
-        )
-        self.hover_label = DirectLabel(
-            text="Это подсказка",
-            scale=0.05,
-            frameColor=(1, 1, 1, 0.8),
-            text_fg=(0, 0, 0, 1),
-            pos=(0.9, 0, 0.7),
-            text_font=custom_font,
-        )
-        self.hover_label.hide()
-        self.help_button.bind(DGG.ENTER, self.show_hover)
-        self.help_button.bind(DGG.EXIT, self.hide_hover)
-        self.tooltip_frame = DirectFrame(
-            frameColor=(1, 1, 1, 0.8),
-            frameSize=(-0.4, 0.4, -0.3, 0.3),
-            pos=(0, 0, 0),
-            state='normal',
-            text_font=custom_font,
-        )
-        self.tooltip_frame.hide()
-        self.tooltip_text = DirectLabel(
-            text="Это ваша подсказка!\nДобавьте описание здесь.",
-            scale=0.05,
-            pos=(0, 0, 0.1),
-            parent=self.tooltip_frame,
-            text_font=custom_font,
-        )
-        self.close_button = DirectButton(
-            text="X",
-            scale=0.05,
-            pos=(0.35, 0, 0.25),
-            parent=self.tooltip_frame,
-            command=self.hide_tooltip,
-            text_font=custom_font,
-        )
+# Функция для переключения между режимами
+def set_mode(mode):
+    global current_mode
+    current_mode = mode
+    textObject.setText(f"Current Mode: {current_mode.title()}")
 
-    def show_tooltip(self):
-        self.tooltip_frame.show()
+    # Обновляем цвета кнопок
+    if current_mode == "points":
+        points_button["frameColor"] = (0.3, 0.3, 0.3, 1)
+        lines_button["frameColor"] = (0.6, 0.6, 0.6, 1)
+    else:
+        points_button["frameColor"] = (0.6, 0.6, 0.6, 1)
+        lines_button["frameColor"] = (0.3, 0.3, 0.3, 1)
 
-    def hide_tooltip(self):
-        self.tooltip_frame.hide()
+# Создаем кнопки
+points_button = DirectButton(
+    text="Points",
+    scale=0.1, pos=(-0.3, 0, 0),
+    frameColor=(0.6, 0.6, 0.6, 1),  # Светлее для выбранного
+    command=set_mode,
+    extraArgs=["points"]
+)
 
-    def show_hover(self, event):
-        self.hover_label.show()
+lines_button = DirectButton(
+    text="Lines",
+    scale=0.1, pos=(0.3, 0, 0),
+    frameColor=(0.3, 0.3, 0.3, 1),  # Темнее для невыбранного
+    command=set_mode,
+    extraArgs=["lines"]
+)
 
-    def hide_hover(self, event):
-        self.hover_label.hide()
-
-
-app = TooltipApp()
-app.run()
+# Запуск
+base.run()

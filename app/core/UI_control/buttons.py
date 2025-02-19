@@ -52,6 +52,30 @@ class ButtonsUI:
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_choice
         )
+        self.points_button = DirectButton(
+            text="Точки",
+            scale=0.1,
+            pos=(-0.2, 0, 0.1),
+            frameColor=(0.6, 0.6, 0.6, 1),
+            command=self.parent.set_mode_view,
+            extraArgs=["points"],
+            text_font=custom_font,
+            parent=self.parent.left_user_frame,
+            relief=None,
+            text_fg=self.config.text_color,
+        )
+        self.lines_button = DirectButton(
+            text="Линии",
+            scale=0.1, pos=(0.2, 0, 0.1),
+            frameColor=(0.3, 0.3, 0.3, 1),
+            command=self.parent.set_mode_view,
+            extraArgs=["lines"],
+            text_font=custom_font,
+            parent=self.parent.left_user_frame,
+            relief=None,
+            text_fg=self.config.text_color,
+            text_bg=self.config.background_color_choice
+        )
         self.back_button_from_point_view = DirectButton(
             text="Назад",
             scale=self.config.scale_big,

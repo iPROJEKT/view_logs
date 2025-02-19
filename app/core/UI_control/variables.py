@@ -21,3 +21,4 @@ class Variables:
         self.real_max_wfs = None
         self.real_min_wfs = None
         self.center = None
+        self.point = True
