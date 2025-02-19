@@ -1,14 +1,15 @@
-from math import cos, sin, radians
-
-from panda3d.core import WindowProperties, Vec3, Point3, Quat
+from panda3d.core import WindowProperties, Vec3, Point3, Quat, PerspectiveLens, OrthographicLens, Vec2
 
 from app.core.UI_control.variables import Variables
-from app.core.tools.utils import load_log_data, calculate_center
+from app.core.compas.compass import CompassControl
+from app.core.lsk.lsk import LSKControl
 
 
-class CameraControl:
+class CameraControl(LSKControl, CompassControl):
     def __init__(self, base):
         self.base = base
+        LSKControl.__init__(self, base)
+        CompassControl.__init__(self, base)
         self.mouse_is_pressed = False
         self.left_mouse_is_pressed = False
         self.ignore_first_mouse_movement = False
@@ -18,11 +19,14 @@ class CameraControl:
         self.zoom_speed = 10
         self.rotation_speed = 0.1
         self.rotation_speed_for_anchor = 0.1
-        self.camera_mode = 0
+        self.camera_mode = False
         self.anchor_distance = 100
         self.current_p = 0
         self.current_h = 0
         self.anchor_point = None
+        self.is_orthographic = False
+        self.lens = PerspectiveLens()
+        self.lens.setFov(60)
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -34,15 +38,42 @@ class CameraControl:
         self.base.accept('wheel_up', self.on_wheel_up)
         self.base.accept('wheel_down', self.on_wheel_down)
         self.base.accept('n', self.toggle_camera_mode)
+        self.base.accept('o', self.toggle_projection)
         self.base.taskMgr.add(self.update_camera_task, "UpdateCameraTask")
+
+    def toggle_projection(self):
+        """Переключение между перспективной и ортографической проекцией."""
+        if self.is_orthographic:
+            self.base.cam.node().setLens(self.lens)  # Назначаем новую линзу камере
+            self.is_orthographic = False
+            print("Переключено на перспективную проекцию.")
+        else:
+            # Переключаемся на ортографическую проекцию
+            lens = OrthographicLens()
+            lens.setFilmSize(100, 100)  # Устанавливаем размер области видимости
+            self.base.cam.node().setLens(lens)  # Назначаем новую линзу камере
+            self.is_orthographic = True
+            print("Переключено на ортографическую проекцию.")
+        self.update_camera_status_text()
+
+    def update_camera_status_text(self):
+        """Обновляет текстовое отображение статуса камеры."""
+        if self.camera_mode:
+            if self.is_orthographic:
+                self.base.alt_cam['text'] = 'Якорная камера с ортографическим режимом'
+            else:
+                self.base.alt_cam['text'] = 'Якорная камера без ортографического режима'
+        else:
+            if self.is_orthographic:
+                self.base.alt_cam['text'] = 'Свободная камера с ортографическим режимом'
+            else:
+                self.base.alt_cam['text'] = 'Свободная камера без ортографического режима'
+        print(f"[STATUS] {self.base.alt_cam['text']}")
 
     def toggle_camera_mode(self):
         """Переключение между режимами камеры."""
-        self.camera_mode = (self.camera_mode + 1) % 2
-        if self.camera_mode == 1:
-            print("Режим вращения вокруг якорной точки активирован.")
-        else:
-            print("Обычный режим камеры активирован.")
+        self.camera_mode = not self.camera_mode  # Переключаем True/False
+        self.update_camera_status_text()
 
     def ignore_first_move(self):
         if self.ignore_first_mouse_movement:
@@ -92,6 +123,10 @@ class CameraControl:
 
             if self.left_mouse_is_pressed:
                 self.handle_camera_rotation()
+
+        elif self.camera_mode == 1:  # Режим вращения вокруг якорной точки
+            if self.left_mouse_is_pressed:
+                self.handle_anchor_rotation()
 
         elif self.camera_mode == 1:  # Режим вращения вокруг якорной точки
             if self.left_mouse_is_pressed:
@@ -212,15 +247,26 @@ class CameraControl:
         Зум камеры.
         :param direction: 1 для приближения, -1 для отдаления.
         """
-        forward_vector = self.base.camera.getQuat().getForward()
-        current_pos = self.base.camera.getPos()
+        if self.is_orthographic:
+            # Если камера в ортографическом режиме
+            lens = self.base.cam.node().getLens()
+            current_size = lens.getFilmSize()
+            new_size = current_size - Vec2(direction * self.zoom_speed, direction * self.zoom_speed)
 
-        zoom_vector = forward_vector * self.zoom_speed * direction
-        new_pos = current_pos + zoom_vector
+            # Ограничиваем минимальный и максимальный размер области видимости
+            new_size.setX(max(10, min(500, new_size.getX())))
+            new_size.setY(max(10, min(500, new_size.getY())))
 
-        self.base.camera.setPos(new_pos)
-        print(f"[ZOOM] Camera position: {self.base.camera.getPos()}")
+            lens.setFilmSize(new_size)
+            print(f"[ZOOM ORTHO] Film size: {lens.getFilmSize()}")
+        else:
+            # Если камера в перспективном режиме
+            forward_vector = self.base.camera.getQuat().getForward()
+            current_pos = self.base.camera.getPos()
 
-        print(
-            f"[ZOOM ANCHOR] Anchor distance: {self.anchor_distance}, Camera position: {self.base.camera.getPos()}"
-        )
+            zoom_vector = forward_vector * self.zoom_speed * direction
+            new_pos = current_pos + zoom_vector
+
+            self.base.camera.setPos(new_pos)
+            print(f"[ZOOM] Camera position: {self.base.camera.getPos()}")
+
