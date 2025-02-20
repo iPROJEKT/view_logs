@@ -11,27 +11,47 @@ from panda3d.core import (
 )
 from app.core.tools.const import (
     REGULAR_FOR_MATCH,
-    REGULAR_FOR_SEARCH,
-    EXTRACT_PROG_DATE,
     SELECT_PROG_DATE
 )
 
 
-def extract_prog_number(filename):
-    match_prog = re.match(REGULAR_FOR_MATCH, filename)
-    prog_number = int(match_prog.group(1)) if match_prog else 0
-    match_date = re.search(REGULAR_FOR_SEARCH, filename)
-    if match_date:
-        date_str = match_date.group(1)
-        date_obj = datetime.strptime(date_str, EXTRACT_PROG_DATE)
-    else:
-        date_obj = datetime.min
+def decode_karel_time(encoded_time):
+    """
+    Декодирует 32-битное время из формата KAREL.
+    :param encoded_time: Целое число (32-битное время KAREL).
+    :return: Расшифрованная дата и время в формате datetime.
+    """
+    year = ((encoded_time >> 25) & 0b1111111) + 1980
+    month = (encoded_time >> 21) & 0b1111
+    day = (encoded_time >> 16) & 0b11111
+    hour = (encoded_time >> 11) & 0b11111
+    minute = (encoded_time >> 5) & 0b111111
+    two_second_increments = encoded_time & 0b11111
+    second = two_second_increments * 2
+    return datetime(year, month, day, hour, minute, second)
 
-    return (prog_number, date_obj)
+
+def extract_prog_number(filename):
+    """
+    Извлекает номер программы и дату из имени файла.
+    :param filename: Имя файла.
+    :return: Кортеж (номер программы, объект datetime).
+    """
+    match_prog = re.match(REGULAR_FOR_MATCH, filename)
+    if match_prog:
+        encoded_time = int(match_prog.group(1))
+        decoded_date = decode_karel_time(encoded_time)
+        return (0, decoded_date)
+    return (0, datetime.min)
 
 
 def on_date_selected(start_date, end_date):
-    """Обработчик ввода диапазона дат."""
+    """
+    Обработчик ввода диапазона дат.
+    :param start_date: Начальная дата (строка в формате 'YYYY-MM-DD').
+    :param end_date: Конечная дата (строка в формате 'YYYY-MM-DD').
+    :return: 0, если диапазон валиден, иначе 1.
+    """
     try:
         start_date_obj = datetime.strptime(start_date, SELECT_PROG_DATE)
         end_date_obj = datetime.strptime(end_date, SELECT_PROG_DATE)
@@ -140,9 +160,9 @@ def create_lines_cloud(data, param_normalized, royg_gradient, length_grad, paren
         start_color = royg_gradient[start_index]
         end_color = royg_gradient[end_index]
 
-        line_segs.setColor(start_color[2], start_color[1], start_color[0], 1.0)
+        line_segs.setColor(start_color[0], start_color[1], start_color[2], 1.0)
         line_segs.moveTo(*start_point)
-        line_segs.setColor(end_color[2], end_color[1], end_color[0], 1.0)
+        line_segs.setColor(end_color[0], end_color[1], end_color[2], 1.0)
         line_segs.drawTo(*end_point)
 
     node = line_segs.create()

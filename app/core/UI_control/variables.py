@@ -22,3 +22,5 @@ class Variables:
         self.real_min_wfs = None
         self.center = None
         self.point = True
+        self.last_data = None
+        self.end_data = None

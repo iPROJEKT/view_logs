@@ -1,4 +1,5 @@
 from direct.gui.DirectLabel import DirectLabel
+from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import TextNode
 
 
@@ -89,6 +90,22 @@ class TextUI:
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_not_active,
         )
+        self.slider_start = OnscreenText(
+            text='2',
+            scale=0.08,
+            font=custom_font,
+            fg=self.config.text_color,
+            pos=(-0.6, -0.7)
+        )
+        self.slider_end = OnscreenText(
+            text='2',
+            scale=0.08,
+            font=custom_font,
+            fg=self.config.text_color,
+            pos=(0.6, -0.7)
+        )
+        self.slider_start.hide()
+        self.slider_end.hide()
         self.alt_cam = DirectLabel(
             text='Свободная камера без ортографии',
             scale=0.05,
