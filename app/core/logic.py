@@ -4,7 +4,6 @@ from datetime import datetime
 
 from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectLabel import DirectLabel
-from direct.gui.DirectOptionMenu import DGG
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import NodePath
 
@@ -12,7 +11,7 @@ from app.core.UI_control.help_text import TextUI
 from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
 from app.core.camera_control.camera import CameraControl
-from app.core.tools.const import LOGS_DIR
+from app.core.tools.const import LOGS_DIR, SELECT_PROG_DATE
 from app.core.config_app import ConfigApp
 from app.core.UI_control.variables import Variables
 from app.core.UI_control.buttons import ButtonsUI
@@ -54,8 +53,6 @@ class LogicApp(
         SliderUI.__init__(self, self)
         TextUI.__init__(self, self, self.config)
         self.calendar_app = CalendarApp(self.config)
-        self.help_button.bind(DGG.ENTER, self.show_hover)
-        self.help_button.bind(DGG.EXIT, self.hide_hover)
 
     def on_date_confirmed(self):
         """Обработчик подтверждения выбора дат."""
@@ -107,11 +104,14 @@ class LogicApp(
     def load_file_list(self, start_date=None, end_date=None):
         """Загрузить список файлов в скроллируемый фрейм."""
         self.save_camera_allowed = False
+        # Фильтруем файлы по дате
         file_names = [
             filename for filename in os.listdir(LOGS_DIR)
             if filename.endswith('.dt') and self.filter_by_date(filename, start_date, end_date)
         ]
-        file_names.sort(key=lambda x: int(x.split('_')[0].replace('prog', '')))
+
+        # Сортируем файлы по числовой части имени (логическое время)
+        file_names.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
 
         element_height = 0.1
         total_height = len(file_names) * element_height
@@ -120,6 +120,19 @@ class LogicApp(
         for i, file_name in enumerate(file_names):
             y_pos = -0.03 - i * element_height
             y_poz_for_check = -0.01 - i * element_height
+            _, file_date = extract_prog_number(file_name)
+            if file_date != datetime.min:  # Только для валидных дат
+                if (
+                    self.last_data is None
+                    or file_date < self.last_data
+                ):
+                    self.last_data = file_date
+
+                if (
+                        self.end_data is None
+                        or file_date > self.end_data
+                ):
+                    self.end_data = file_date
             label = DirectLabel(
                 text=file_name, scale=0.07, pos=(-0.3, 0, y_pos),
                 parent=self.scroll_frame.getCanvas(), frameColor=(0, 0, 0, 0),
@@ -131,6 +144,7 @@ class LogicApp(
                 relief=None,
             )
             self.checkboxes.append(checkbox)
+
 
     def select_all_up(self):
         """Выделяет или очищает все чекбоксы."""
@@ -149,11 +163,17 @@ class LogicApp(
 
     @staticmethod
     def filter_by_date(filename, start_date, end_date):
-        """Фильтровать файлы по диапазону дат."""
-        prog_number, file_date = extract_prog_number(filename)
+        """
+        Фильтрует файлы по диапазону дат.
+        :param filename: Имя файла.
+        :param start_date: Начальная дата (строка в формате 'YYYY-MM-DD').
+        :param end_date: Конечная дата (строка в формате 'YYYY-MM-DD').
+        :return: True, если файл попадает в диапазон, иначе False.
+        """
+        _, file_date = extract_prog_number(filename)
         if start_date and end_date:
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
-            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+            start_date_obj = datetime.strptime(start_date, SELECT_PROG_DATE)
+            end_date_obj = datetime.strptime(end_date, SELECT_PROG_DATE)
             return start_date_obj <= file_date <= end_date_obj
         return True
 
@@ -168,6 +188,9 @@ class LogicApp(
             self.parameters_down_help.show()
             self.slider.show()
             self.alt_cam.show()
+            self.slider_start.show()
+            self.slider_end.show()
+            self.set_time_line()
             print(f"Выбранные файлы: {self.file_names}")
 
         self.point_cloud_nodes = []
@@ -181,7 +204,8 @@ class LogicApp(
             node_path = load_logs_and_create_point_cloud(
                 file_path, self.render,
                 gradient_param=gradient_param,
-                filter_type=filter_type
+                filter_type=filter_type,
+                point=self.point
             )
 
             if node_path:
@@ -268,6 +292,8 @@ class LogicApp(
         self.parameters_down_help.hide()
         self.image_label.hide()
         self.number_input_top.hide()
+        self.slider_start.show()
+        self.slider_end.show()
         self.number_input_bottom.hide()
         self.date_frame.show()
         self.select_all_up["text"] = 'Выбрать все'
@@ -285,9 +311,17 @@ class LogicApp(
         self.slider_timer.start()
 
     def update_layers(self, slider_value):
-        """Обновляет отображаемые слои на основе значения слайдера."""
+        """
+        Обновляет отображаемые слои и сопоставляет положение слайдера со временем.
+        """
+        # Преобразуем положение слайдера в значение времени
+        time_range = self.end_data - self.last_data
+        current_time = self.last_data + (slider_value / 100) * time_range
+
+        # Определяем, какие слои должны быть видимы
         visible_layers = int((slider_value / 100) * len(self.file_names))
         print(f"Обновление слоев: отображаем 0-{visible_layers - 1} слоев.")
+        print(f"Текущее время: {current_time} (из диапазона {self.last_data} - {self.end_data})")
 
         self.clear_point_cloud_nodes()
         self.update_point_cloud_nodes(visible_layers)
@@ -314,6 +348,10 @@ class LogicApp(
         """Показать диалог ошибки."""
         self.error_empty_log.show()
 
+    def show_error_v(self):
+        """Показать диалог ошибки."""
+        self.error_v.show()
+
     def close_error_min_max(self, _):
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
@@ -323,6 +361,10 @@ class LogicApp(
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
             self.error_empty_log.hide()
+
+    def close_error_v(self, _):
+        if hasattr(self, 'error_dialog'):
+            self.error_v.hide()
 
     def update_labels(self, selected_item):
         if selected_item == "I":
@@ -356,22 +398,42 @@ class LogicApp(
 
         self.point_cloud_nodes.clear()
 
-    def update_point_cloud_nodes(self, visible_layers):
-        """Обновляет облака точек на основе видимых слоев и текущих параметров."""
-        for i, file_name in enumerate(self.file_names[:visible_layers]):
-            result = get_result(
-                os.path.join(LOGS_DIR, file_name),
-                self.render,
-                self.saved_gradient_param,
-                self.saved_min,
-                self.saved_max,
-                self.saved_filter_type,
-                float(self.size_input.get()),
-                self.spliter_input.get()
-            )
+    def update_point_cloud_nodes(self, slider_value):
+        """
+        Обновляет облака точек на основе времени, определяемого слайдером.
+        Файлы отображаются, если их временной штамп попадает в допустимый диапазон.
+        """
+        # Рассчитываем текущее время слайдера
+        time_range = self.end_data - self.last_data
+        current_time = self.last_data + (slider_value / 100) * time_range
+        try:
+            int(self.size_input.get())
+            int(self.spliter_input.get())
+            int(self.saved_max)
+            int(self.saved_min)
+        except Exception:
+            self.show_error_v()
+        print(f"[DEBUG] Слайдер: {slider_value}, Текущее время: {current_time}")
+        for file_name in self.file_names:
+            # Извлекаем временной штамп из имени файла
+            _, file_time = extract_prog_number(file_name)
+            if file_time <= current_time:  # Если время файла в пределах текущего времени
+                result = get_result(
+                    os.path.join(LOGS_DIR, file_name),
+                    self.render,
+                    self.saved_gradient_param,
+                    self.saved_min,
+                    self.saved_max,
+                    self.saved_filter_type,
+                    self.size_input.get(),
+                    self.spliter_input.get(),
+                    self.point,
+                )
 
-            if isinstance(result, NodePath):
-                self.point_cloud_nodes.append(result)
+                if isinstance(result, NodePath):
+                    self.point_cloud_nodes.append(result)
+
+        print(f"[DEBUG] Отображено узлов: {len(self.point_cloud_nodes)}")
 
     def show_hover(self, event):
         self.hover_label.show()
@@ -385,6 +447,8 @@ class LogicApp(
         self.slider.hide()
         self.alt_cam.hide()
         self.compass_node.hide()
+        self.slider_start.hide()
+        self.slider_end.hide()
         self.opent_left_panel_button.hide()
         self.back_button_from_point_view.hide()
 
@@ -393,6 +457,47 @@ class LogicApp(
         self.left_user_frame.hide()
         self.compass_node.show()
         self.slider.show()
+        self.slider_start.show()
+        self.slider_end.show()
         self.alt_cam.show()
         self.opent_left_panel_button.show()
         self.back_button_from_point_view.show()
+
+    def set_mode_view(self, current_mode):
+        print(f"Mode changed to: {current_mode}")
+        if current_mode == "points":
+            self.points_button["text_bg"] = (33/255, 33/255, 33/255, 1)
+            self.lines_button["text_bg"] = self.config.background_color_choice
+            self.choise_text['text'] = 'Режим отображения: Точки'
+            self.point = True
+        else:
+            self.points_button["text_bg"] = self.config.background_color_choice
+            self.lines_button["text_bg"] = (33/255, 33/255, 33/255, 1)
+            self.choise_text['text'] = 'Режим отображения: Линии'
+            self.point = False
+
+    def set_time_line(self):
+        self.slider_start.setText(str(self.last_data)[10:16])
+        self.slider_end.setText(str(self.end_data)[10:16])
+        print(len(str(self.last_data)))
+
+    def show_time_label(self, event):
+        """Отображает метку с временем при наведении на слайдер."""
+        self.time_label.show()
+
+    def hide_time_label(self, event):
+        """Скрывает метку с временем, когда курсор покидает слайдер."""
+        self.time_label.hide()
+
+    def update_time_label(self, event):
+        """Обновляет текст метки на основе текущего значения слайдера."""
+        # Получаем текущее значение слайдера
+        slider_value = self.slider['value']
+
+        # Рассчитываем соответствующее время
+        time_range = self.parent.end_data - self.parent.last_data
+        current_time = self.parent.last_data + (slider_value / 100) * time_range
+
+        # Обновляем текст метки
+        self.time_label['text'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_label.setPos(self.slider.getX(), 0, self.slider.getZ() + 0.1)

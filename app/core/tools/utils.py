@@ -7,30 +7,51 @@ from panda3d.core import (
     GeomVertexFormat,
     Geom, GeomVertexWriter,
     GeomPoints, GeomNode, Point3,
+    LineSegs
 )
 from app.core.tools.const import (
     REGULAR_FOR_MATCH,
-    REGULAR_FOR_SEARCH,
-    EXTRACT_PROG_DATE,
     SELECT_PROG_DATE
 )
 
 
-def extract_prog_number(filename):
-    match_prog = re.match(REGULAR_FOR_MATCH, filename)
-    prog_number = int(match_prog.group(1)) if match_prog else 0
-    match_date = re.search(REGULAR_FOR_SEARCH, filename)
-    if match_date:
-        date_str = match_date.group(1)
-        date_obj = datetime.strptime(date_str, EXTRACT_PROG_DATE)
-    else:
-        date_obj = datetime.min
+def decode_karel_time(encoded_time):
+    """
+    Декодирует 32-битное время из формата KAREL.
+    :param encoded_time: Целое число (32-битное время KAREL).
+    :return: Расшифрованная дата и время в формате datetime.
+    """
+    year = ((encoded_time >> 25) & 0b1111111) + 1980
+    month = (encoded_time >> 21) & 0b1111
+    day = (encoded_time >> 16) & 0b11111
+    hour = (encoded_time >> 11) & 0b11111
+    minute = (encoded_time >> 5) & 0b111111
+    two_second_increments = encoded_time & 0b11111
+    second = two_second_increments * 2
+    return datetime(year, month, day, hour, minute, second)
 
-    return (prog_number, date_obj)
+
+def extract_prog_number(filename):
+    """
+    Извлекает номер программы и дату из имени файла.
+    :param filename: Имя файла.
+    :return: Кортеж (номер программы, объект datetime).
+    """
+    match_prog = re.match(REGULAR_FOR_MATCH, filename)
+    if match_prog:
+        encoded_time = int(match_prog.group(1))
+        decoded_date = decode_karel_time(encoded_time)
+        return (0, decoded_date)
+    return (0, datetime.min)
 
 
 def on_date_selected(start_date, end_date):
-    """Обработчик ввода диапазона дат."""
+    """
+    Обработчик ввода диапазона дат.
+    :param start_date: Начальная дата (строка в формате 'YYYY-MM-DD').
+    :param end_date: Конечная дата (строка в формате 'YYYY-MM-DD').
+    :return: 0, если диапазон валиден, иначе 1.
+    """
     try:
         start_date_obj = datetime.strptime(start_date, SELECT_PROG_DATE)
         end_date_obj = datetime.strptime(end_date, SELECT_PROG_DATE)
@@ -115,6 +136,40 @@ def generate_roygb_gradient(length_grad):
     return royg_gradient
 
 
+def create_lines_cloud(data, param_normalized, royg_gradient, length_grad, parent, line_thickness=1.0):
+    """Создает облако линий с градиентом."""
+    if len(data) < 2:
+        print("Ошибка: недостаточно точек для построения линий.")
+        return None
+
+    line_segs = LineSegs()
+    line_segs.setThickness(line_thickness)
+
+    for i in range(len(data) - 1):
+        # Начало и конец линии
+        start_point = data[i]
+        end_point = data[i + 1]
+
+        # Градиентный цвет для начальной и конечной точки
+        start_norm = param_normalized[i]
+        end_norm = param_normalized[i + 1]
+
+        start_index = int(max(0, min(start_norm * (length_grad - 1), length_grad - 1)))
+        end_index = int(max(0, min(end_norm * (length_grad - 1), length_grad - 1)))
+
+        start_color = royg_gradient[start_index]
+        end_color = royg_gradient[end_index]
+
+        line_segs.setColor(start_color[0], start_color[1], start_color[2], 1.0)
+        line_segs.moveTo(*start_point)
+        line_segs.setColor(end_color[0], end_color[1], end_color[2], 1.0)
+        line_segs.drawTo(*end_point)
+
+    node = line_segs.create()
+    node_path = parent.attachNewNode(node)
+    return node_path
+
+
 def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
     """Создает облако точек с градиентом."""
     vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
@@ -149,12 +204,20 @@ def load_logs_and_create_point_cloud(
     custom_max=None,
     filter_type="All",
     point_size=1.0,
-    point_step=1
+    point_step=1,
+    point=True
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
+    try:
+        int(point_step)
+        int(point_size)
+    except Exception:
+        return
     if int(point_step) <= 0:  # Проверяем шаг
         print("Ошибка: значение point_step должно быть больше 0. Установлено значение по умолчанию: 1.")
         point_step = 1
+    if int(point_size) <= 0:
+        point_size = 1
 
     data, i_values, u_values, wfs_values = load_log_data(file_path)
     if not data:
@@ -180,7 +243,16 @@ def load_logs_and_create_point_cloud(
         return None, None, None
 
     royg_gradient = generate_roygb_gradient(length_grad)
-    node_path = create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size)
+    if point:
+        node_path = create_point_cloud(
+            data, param_normalized, royg_gradient,
+            length_grad, parent, point_size
+        )
+    else:
+        node_path = create_lines_cloud(
+            data, param_normalized, royg_gradient,
+            length_grad, parent, point_size
+        )
     return node_path, [point[2] for point in data], (z_min, z_max), data
 
 
@@ -232,7 +304,7 @@ def calculate_center(points):
     return center
 
 
-def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step):
+def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step, point):
     node_path = None
     result = load_logs_and_create_point_cloud(
         file_path=file_path,
@@ -242,7 +314,8 @@ def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter
         custom_max=custom_max,
         filter_type=filter_type,
         point_size=size,
-        point_step=point_step
+        point_step=point_step,
+        point=point
     )
     if result:
         if isinstance(result, tuple):

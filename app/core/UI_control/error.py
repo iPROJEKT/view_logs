@@ -28,6 +28,16 @@ class ErrorDialogsUI:
             relief=None,
             text_bg=self.config.background_color_choice
         )
+        self.error_v = OkDialog(
+            dialogName="ErrorV",
+            text="Ошибка: Вы указали одно из начений с буквой!",
+            buttonTextList=["OK"],
+            command=self.close_error_v,
+            text_font=custom_font,
+            text_fg=self.config.text_color,
+            relief=None,
+            text_bg=self.config.background_color_choice
+        )
 
         self.error_empty_log = OkDialog(
             dialogName="ErrorEmptyLog",
@@ -43,3 +53,4 @@ class ErrorDialogsUI:
         self.error_dialog.hide()
         self.error_min_max.hide()
         self.error_empty_log.hide()
+        self.error_v.hide()
