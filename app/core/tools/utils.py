@@ -208,9 +208,16 @@ def load_logs_and_create_point_cloud(
     point=True
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
+    try:
+        int(point_step)
+        int(point_size)
+    except Exception:
+        return
     if int(point_step) <= 0:  # Проверяем шаг
         print("Ошибка: значение point_step должно быть больше 0. Установлено значение по умолчанию: 1.")
         point_step = 1
+    if int(point_size) <= 0:
+        point_size = 1
 
     data, i_values, u_values, wfs_values = load_log_data(file_path)
     if not data:

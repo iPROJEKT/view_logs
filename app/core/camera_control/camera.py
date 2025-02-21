@@ -97,12 +97,11 @@ class CameraControl(LSKControl, CompassControl):
         """Устанавливаем начальную позицию и ориентацию камеры."""
         print("Setting initial camera position...")
         initial_pos = Vec3(-63.80, -528.95, 140.59)
-        initial_hpr = Vec3(-26.77, -20.25, 0.45)
 
         self.base.camera.setPos(initial_pos)
-        self.base.camera.setHpr(initial_hpr)
+        self.base.camera.lookAt(Variables.center)
 
-        print(f"Camera initialized at position: {initial_pos}, rotation: {initial_hpr}")
+        print(f"Camera initialized at position: {initial_pos},")
 
     def show_cursor(self):
         """Показывает курсор мыши."""

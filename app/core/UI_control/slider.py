@@ -29,4 +29,7 @@ class SliderUI:
         thumb.bind(DGG.ENTER, self.parent.show_time_label)
         thumb.bind(DGG.EXIT, self.parent.hide_time_label)
         thumb.bind(DGG.WITHIN, self.parent.update_time_label)
+        self.slider.bind(DGG.ENTER, self.parent.show_time_label)
+        self.slider.bind(DGG.EXIT, self.parent.hide_time_label)
+        self.slider.bind(DGG.WITHIN, self.parent.update_time_label)
 

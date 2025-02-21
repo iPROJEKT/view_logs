@@ -21,6 +21,9 @@ setup(
                 '**/*.ttf',
                 '**/*.dt'
             ],
+            "icons": {
+                'WAAMMER POST-ANALYSIS': ["**/icon2.png",]
+            },
 
             # Include the OpenGL renderer and OpenAL audio plug-in
             'plugins': [

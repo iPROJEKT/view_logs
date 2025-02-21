@@ -348,6 +348,10 @@ class LogicApp(
         """Показать диалог ошибки."""
         self.error_empty_log.show()
 
+    def show_error_v(self):
+        """Показать диалог ошибки."""
+        self.error_v.show()
+
     def close_error_min_max(self, _):
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
@@ -357,6 +361,10 @@ class LogicApp(
         """Закрыть диалог ошибки."""
         if hasattr(self, 'error_dialog'):
             self.error_empty_log.hide()
+
+    def close_error_v(self, _):
+        if hasattr(self, 'error_dialog'):
+            self.error_v.hide()
 
     def update_labels(self, selected_item):
         if selected_item == "I":
@@ -398,10 +406,14 @@ class LogicApp(
         # Рассчитываем текущее время слайдера
         time_range = self.end_data - self.last_data
         current_time = self.last_data + (slider_value / 100) * time_range
-
+        try:
+            int(self.size_input.get())
+            int(self.spliter_input.get())
+            int(self.saved_max)
+            int(self.saved_min)
+        except Exception:
+            self.show_error_v()
         print(f"[DEBUG] Слайдер: {slider_value}, Текущее время: {current_time}")
-
-        # Фильтруем файлы по времени
         for file_name in self.file_names:
             # Извлекаем временной штамп из имени файла
             _, file_time = extract_prog_number(file_name)
@@ -413,7 +425,7 @@ class LogicApp(
                     self.saved_min,
                     self.saved_max,
                     self.saved_filter_type,
-                    float(self.size_input.get()),
+                    self.size_input.get(),
                     self.spliter_input.get(),
                     self.point,
                 )
@@ -435,6 +447,8 @@ class LogicApp(
         self.slider.hide()
         self.alt_cam.hide()
         self.compass_node.hide()
+        self.slider_start.hide()
+        self.slider_end.hide()
         self.opent_left_panel_button.hide()
         self.back_button_from_point_view.hide()
 
@@ -443,6 +457,8 @@ class LogicApp(
         self.left_user_frame.hide()
         self.compass_node.show()
         self.slider.show()
+        self.slider_start.show()
+        self.slider_end.show()
         self.alt_cam.show()
         self.opent_left_panel_button.show()
         self.back_button_from_point_view.show()
