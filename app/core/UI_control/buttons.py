@@ -112,7 +112,7 @@ class ButtonsUI:
             scale=0.2,
             pos=(-1.2, 0, 0),
             text_font=custom_font,
-            command=self.parent.show_panet,
+            command=self.parent.show_panel,
             relief=None,
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_choice
@@ -131,3 +131,25 @@ class ButtonsUI:
         self.closed_left_panel_button.hide()
         self.opent_left_panel_button.hide()
         self.back_button_from_point_view.hide()
+
+    def show_panel(self):
+        self.parent.closed_left_panel_button.show()
+        self.parent.left_user_frame.show()
+        self.parent.slider.hide()
+        self.parent.alt_cam.hide()
+        self.parent.compass_node.hide()
+        self.parent.slider_start.hide()
+        self.parent.slider_end.hide()
+        self.parent.opent_left_panel_button.hide()
+        self.parent.back_button_from_point_view.hide()
+
+    def hide_panel(self):
+        self.parent.closed_left_panel_button.hide()
+        self.parent.left_user_frame.hide()
+        self.parent.compass_node.show()
+        self.parent.slider.show()
+        self.parent.slider_start.show()
+        self.parent.slider_end.show()
+        self.parent.alt_cam.show()
+        self.parent.opent_left_panel_button.show()
+        self.parent.back_button_from_point_view.show()

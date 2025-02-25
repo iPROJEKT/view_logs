@@ -12,7 +12,7 @@ from app.core.UI_control.slider import SliderUI
 from app.core.calendar_control.calendar_app import CalendarApp
 from app.core.camera_control.camera import CameraControl
 from app.core.tools.const import LOGS_DIR, SELECT_PROG_DATE
-from app.core.config_app import ConfigApp
+from app.core.config import ConfigApp
 from app.core.UI_control.variables import Variables
 from app.core.UI_control.buttons import ButtonsUI
 from app.core.UI_control.error import ErrorDialogsUI
@@ -21,8 +21,13 @@ from app.core.UI_control.image import ImageUI
 from app.core.UI_control.input_fields import InputFieldsUI
 from app.core.UI_control.pop_menu import PopMenuUI
 from app.core.splash_screen_control.screen_saver_logic import SplashScreenLogic
-from app.core.tools.utils import extract_prog_number, on_date_selected, load_logs_and_create_point_cloud, get_result, \
+from app.core.tools.utils import (
+    extract_prog_number,
+    on_date_selected,
+    load_logs_and_create_point_cloud,
+    get_result,
     calculate_center
+)
 
 
 class LogicApp(
@@ -41,7 +46,6 @@ class LogicApp(
         ShowBase.__init__(self)
         self.config = ConfigApp()
         self.setBackgroundColor(0, 0, 0)
-        SplashScreenLogic.__init__(self, self, self.config)
         FramesUI.__init__(self, self.config)
         InputFieldsUI.__init__(self, self, self.config)
         ButtonsUI.__init__(self, self, self.config)
@@ -104,7 +108,6 @@ class LogicApp(
     def load_file_list(self, start_date=None, end_date=None):
         """Загрузить список файлов в скроллируемый фрейм."""
         self.save_camera_allowed = False
-        # Фильтруем файлы по дате
         file_names = [
             filename for filename in os.listdir(LOGS_DIR)
             if filename.endswith('.dt') and self.filter_by_date(filename, start_date, end_date)
@@ -144,7 +147,6 @@ class LogicApp(
                 relief=None,
             )
             self.checkboxes.append(checkbox)
-
 
     def select_all_up(self):
         """Выделяет или очищает все чекбоксы."""
@@ -252,8 +254,6 @@ class LogicApp(
         slider_value = self.slider.getValue()
         visible_layers = int((slider_value / 100) * len(self.file_names))
 
-        print(f"Обновление градиента и слоев: {self.saved_gradient_param}, отображаем 0-{visible_layers - 1} слоев.")
-
         self.clear_point_cloud_nodes()
         self.update_point_cloud_nodes(visible_layers)
 
@@ -328,55 +328,6 @@ class LogicApp(
 
         print(f"Отображается {len(self.point_cloud_nodes)} слоев.")
 
-    def close_error_dialog(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_dialog.hide()
-            self.calendar_app.ui.open_calendar_first.show()
-            self.calendar_app.ui.open_calendar_second.show()
-            self.confirm_button.show()
-
-    def show_error_dialog(self):
-        """Показать диалог ошибки."""
-        self.error_dialog.show()
-
-    def show_error_min_max(self):
-        """Показать диалог ошибки."""
-        self.error_min_max.show()
-
-    def show_error_empty_log(self):
-        """Показать диалог ошибки."""
-        self.error_empty_log.show()
-
-    def show_error_v(self):
-        """Показать диалог ошибки."""
-        self.error_v.show()
-
-    def close_error_min_max(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_min_max.hide()
-
-    def close_error_empty_log(self, _):
-        """Закрыть диалог ошибки."""
-        if hasattr(self, 'error_dialog'):
-            self.error_empty_log.hide()
-
-    def close_error_v(self, _):
-        if hasattr(self, 'error_dialog'):
-            self.error_v.hide()
-
-    def update_labels(self, selected_item):
-        if selected_item == "I":
-            self.parameters_up_help["text"] = "I max"
-            self.parameters_down_help["text"] = "I min"
-        elif selected_item == "U":
-            self.parameters_up_help["text"] = "U max"
-            self.parameters_down_help["text"] = "U min"
-        elif selected_item == "WFS":
-            self.parameters_up_help["text"] = "WFS max"
-            self.parameters_down_help["text"] = "WFS min"
-
     def disable_camera_control(self):
         """Отключает управление камерой."""
         self.taskMgr.remove("UpdateCameraTask")
@@ -413,6 +364,7 @@ class LogicApp(
             int(self.saved_min)
         except Exception:
             self.show_error_v()
+            return
         print(f"[DEBUG] Слайдер: {slider_value}, Текущее время: {current_time}")
         for file_name in self.file_names:
             # Извлекаем временной штамп из имени файла
@@ -440,28 +392,6 @@ class LogicApp(
 
     def hide_hover(self, event):
         self.hover_label.hide()
-
-    def show_panet(self):
-        self.closed_left_panel_button.show()
-        self.left_user_frame.show()
-        self.slider.hide()
-        self.alt_cam.hide()
-        self.compass_node.hide()
-        self.slider_start.hide()
-        self.slider_end.hide()
-        self.opent_left_panel_button.hide()
-        self.back_button_from_point_view.hide()
-
-    def hide_panel(self):
-        self.closed_left_panel_button.hide()
-        self.left_user_frame.hide()
-        self.compass_node.show()
-        self.slider.show()
-        self.slider_start.show()
-        self.slider_end.show()
-        self.alt_cam.show()
-        self.opent_left_panel_button.show()
-        self.back_button_from_point_view.show()
 
     def set_mode_view(self, current_mode):
         print(f"Mode changed to: {current_mode}")
@@ -498,6 +428,5 @@ class LogicApp(
         time_range = self.parent.end_data - self.parent.last_data
         current_time = self.parent.last_data + (slider_value / 100) * time_range
 
-        # Обновляем текст метки
         self.time_label['text'] = current_time.strftime("%Y-%m-%d %H:%M:%S")
         self.time_label.setPos(self.slider.getX(), 0, self.slider.getZ() + 0.1)

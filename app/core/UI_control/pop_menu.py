@@ -44,3 +44,14 @@ class PopMenuUI:
             text_fg=self.config.text_color
 
         )
+
+    def update_labels(self, selected_item):
+        if selected_item == "I":
+            self.parent.parameters_up_help["text"] = "I max"
+            self.parent.parameters_down_help["text"] = "I min"
+        elif selected_item == "U":
+            self.parent.parameters_up_help["text"] = "U max"
+            self.parent.parameters_down_help["text"] = "U min"
+        elif selected_item == "WFS":
+            self.parent.parameters_up_help["text"] = "WFS max"
+            self.parent.parameters_down_help["text"] = "WFS min"

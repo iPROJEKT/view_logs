@@ -12,12 +12,17 @@ class CalendarUI:
     def __init__(self, config):
         self.config = config
         custom_font = loader.loadFont('static/fonts/Ubuntu-Regular.ttf')
+        self.main_frame = DirectFrame(
+            frameColor=(0, 0, 0, 1),
+            frameSize=(-1, 1, -1, 1),
+            pos=(0, 0, 0),
+        )
         self.frame = DirectFrame(
             frameColor=(0, 0, 0, 1),
-            frameSize=(-0.8, 0.8, -0.6, 0.6),
+            frameSize=(-1, 1, -1, 1),
             pos=(0, 0, 0.25),
+            parent=self.main_frame
         )
-        self.frame.hide()
         self.start_help_text = DirectLabel(
             text='Выберите диапазон дат для отображения УП',
             scale=0.08,
@@ -27,6 +32,7 @@ class CalendarUI:
             relief=None,
             text_fg=self.config.background_color_choice,
             text_bg=self.config.background_color_not_active,
+            parent=self.main_frame
         )
         self.open_calendar_first = DirectButton(
             text="Начальная дата",
@@ -38,6 +44,7 @@ class CalendarUI:
             text_fg=(1, 1, 1, 1),
             text_bg=(46 / 255, 46 / 255, 46 / 255, 1),
             extraArgs=["first"],
+            parent=self.main_frame
         )
         self.open_calendar_second = DirectButton(
             text="Конечная дата",
@@ -49,8 +56,9 @@ class CalendarUI:
             text_fg=(1, 1, 1, 1),
             text_bg=(46 / 255, 46 / 255, 46 / 255, 1),
             extraArgs=["second"],
+            parent=self.main_frame
         )
-        self.frame.hide()  # Начинаем с скрытого состояния
+        self.frame.hide()
         self.month_label = OnscreenText(
             text="", pos=(0, 0.4), scale=0.07, parent=self.frame,
             fg=(1, 1, 1, 1), font=custom_font
