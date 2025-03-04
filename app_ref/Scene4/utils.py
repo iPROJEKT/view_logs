@@ -1,147 +1,100 @@
-import re
-from datetime import datetime
-
+import os
 import numpy as np
+from datetime import datetime
 from panda3d.core import (
-    GeomVertexData,
-    GeomVertexFormat,
-    Geom, GeomVertexWriter,
-    GeomPoints, GeomNode, Point3,
-    LineSegs
+    GeomVertexData, GeomVertexWriter, GeomVertexReader,
+    GeomVertexFormat, Geom, GeomPoints,
+    GeomNode, Point3, LineSegs, LPoint3f
 )
-from app.core.tools.const import (
-    REGULAR_FOR_MATCH,
-    SELECT_PROG_DATE
-)
-
-
-def decode_karel_time(encoded_time):
-    """
-    Декодирует 32-битное время из формата KAREL.
-    :param encoded_time: Целое число (32-битное время KAREL).
-    :return: Расшифрованная дата и время в формате datetime.
-    """
-    year = ((encoded_time >> 25) & 0b1111111) + 1980
-    month = (encoded_time >> 21) & 0b1111
-    day = (encoded_time >> 16) & 0b11111
-    hour = (encoded_time >> 11) & 0b11111
-    minute = (encoded_time >> 5) & 0b111111
-    two_second_increments = encoded_time & 0b11111
-    second = two_second_increments * 2
-    return datetime(year, month, day, hour, minute, second)
-
-
-def extract_prog_number(filename):
-    """
-    Извлекает номер программы и дату из имени файла.
-    :param filename: Имя файла.
-    :return: Кортеж (номер программы, объект datetime).
-    """
-    match_prog = re.match(REGULAR_FOR_MATCH, filename)
-    if match_prog:
-        encoded_time = int(match_prog.group(1))
-        decoded_date = decode_karel_time(encoded_time)
-        return (0, decoded_date)
-    return (0, datetime.min)
-
-
-def on_date_selected(start_date, end_date):
-    """
-    Обработчик ввода диапазона дат.
-    :param start_date: Начальная дата (строка в формате 'YYYY-MM-DD').
-    :param end_date: Конечная дата (строка в формате 'YYYY-MM-DD').
-    :return: 0, если диапазон валиден, иначе 1.
-    """
-    try:
-        start_date_obj = datetime.strptime(start_date, SELECT_PROG_DATE)
-        end_date_obj = datetime.strptime(end_date, SELECT_PROG_DATE)
-        if end_date_obj >= start_date_obj:
-            return 0
-        else:
-            return 1
-    except ValueError:
-        return 1
+from app.core.tools.const import LOGS_DIR
 
 
 def load_log_data(file_path):
     """Загружает данные из файла и возвращает координаты и параметры."""
     data = []
-    i_values, u_values, wfs_values, GI7_values, GI8_values, GI9_values, GI10_values = [], [], [], [], [], [], []
+    i_values, u_values, wfs_values = [], [], []
+    gi7_values, gi8_values, gi10_values, gi11_values = [], [], [], []
 
-    with open(file_path, 'r') as file:
-        for line in file:
-            if line.strip() == '':
-                continue
-
-            values = line.split(';')
-            if len(values) >= 18:
+    try:
+        with open(file_path, 'r') as file:
+            for i, line in enumerate(file):
+                values = line.strip().split(';')
+                if len(values) < 18:
+                    continue
                 try:
-                    x = float(values[9].strip())
-                    y = float(values[10].strip())
-                    z = float(values[11].strip())
-                    i = float(values[15].strip())
-                    u = float(values[16].strip())
-                    wfs = float(values[17].strip())
-                    GI7 = float(values[-4].strip())
-                    GI8 = float(values[-3].strip())
-                    GI9 = float(values[-2].strip())
-                    GI10 = float(values[-1].strip())
-
+                    x, y, z = map(float, values[9:12])
+                    i, u, wfs = map(float, values[15:18])
+                    gi7, gi8, gi9, gi10 = map(float, values[-4:])
                     data.append((x, y, z))
                     i_values.append(i)
                     u_values.append(u)
                     wfs_values.append(wfs)
-                    GI7_values.append(GI7)
-                    GI8_values.append(GI8)
-                    GI9_values.append(GI9)
-                    GI10_values.append(GI10)
-                except ValueError:
+                    gi7_values.append(gi7)
+                    gi8_values.append(gi8)
+                    gi10_values.append(gi9)
+                    gi11_values.append(gi10)
+                except ValueError as e:
                     continue
+    except (OSError, IOError) as e:
+        print(f"Ошибка чтения файла {file_path}: {e}")
 
-    if not data:
-        return None, None, None, None, None, None, None, None
-
-    return data, i_values, u_values, wfs_values, GI7_values, GI8_values, GI9_values, GI10_values
+    return data, i_values, u_values, wfs_values, gi7_values, gi8_values, gi10_values, gi11_values
 
 
 def normalize_parameter(param_values, custom_min=None, custom_max=None):
     """Нормализует значения параметра в диапазон [0, 1], с клипингом."""
-    param_min = custom_min if custom_min is not None else min(param_values)
-    param_max = custom_max if custom_max is not None else max(param_values)
+    if custom_min is not None and custom_max is not None:
+        param_min = float(custom_min)
+        param_max = float(custom_max)
+    else:
+        param_min = min(param_values)
+        param_max = max(param_values)
 
     if param_min == param_max:
         print("Минимум и максимум совпадают. Нормализация невозможна.")
         return [0.5] * len(param_values)
-
     normalized = [(val - param_min) / (param_max - param_min) for val in param_values]
-
-    print(f"Параметр до нормализации: {param_values[:5]}")
-    print(f"Диапазон нормализации: [{param_min}, {param_max}]")
-    print(f"Нормализованные значения: {normalized[:5]}")
-
     return [max(0, min(1, norm)) for norm in normalized]
 
 
 def generate_roygb_gradient(length_grad):
-    """Создает градиент цветов от зелёного до красного."""
+    """Создает градиент цветов от зелёного до красного в RGB."""
     royg_gradient = np.zeros((length_grad + 1, 3))
-
-    def green_to_yellow(i, section):
-        return [i / section, 1, 0]
-
-    def yellow_to_red(i, section):
-        return [1, 1 - (i - section) / section, 0]
-
     section = length_grad // 2
-
-    # Заполнение градиента
     for i in range(length_grad + 1):
         if i <= section:
-            royg_gradient[i] = green_to_yellow(i, section)
+            royg_gradient[i] = [i / section, 1, 0]  # green_to_yellow
         else:
-            royg_gradient[i] = yellow_to_red(i, section)
-
+            royg_gradient[i] = [1, 1 - (i - section) / section, 0]  # yellow_to_red
     return royg_gradient
+
+
+def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
+    """Создает облако точек с градиентом в RGB, записывая в BGR."""
+    vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
+    vertex_writer = GeomVertexWriter(vertex_data, "vertex")
+    color_writer = GeomVertexWriter(vertex_data, "color")
+
+    for i, ((x, y, z), param_norm) in enumerate(zip(data, param_normalized)):
+        vertex_writer.addData3f(x, y, z)
+        grad_index = int(max(0, min(param_norm * (length_grad - 1), length_grad - 1)))
+        color = royg_gradient[grad_index]
+        color_writer.addData4f(color[0], color[1], color[2], 1.0)
+
+    points = Geom(vertex_data)
+    primitive = GeomPoints(Geom.UH_static)
+    primitive.addNextVertices(len(data))
+    points.addPrimitive(primitive)
+
+    geom_node = GeomNode("log_point_cloud_node")
+    geom_node.addGeom(points)
+
+    node_path = parent.attachNewNode(geom_node)
+    node_path.setRenderModeThickness(int(point_size))
+    node_path.setLightOff(1)
+    node_path.setColorOff(1)
+    node_path.setShaderAuto()
+    return node_path
 
 
 def create_lines_cloud(data, param_normalized, royg_gradient, length_grad, parent, line_thickness=1.0):
@@ -175,32 +128,6 @@ def create_lines_cloud(data, param_normalized, royg_gradient, length_grad, paren
 
     node = line_segs.create()
     node_path = parent.attachNewNode(node)
-    return node_path
-
-
-def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
-    """Создает облако точек с градиентом."""
-    vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
-    vertex_writer = GeomVertexWriter(vertex_data, "vertex")
-    color_writer = GeomVertexWriter(vertex_data, "color")
-
-    for (x, y, z), param_norm in zip(data, param_normalized):
-        vertex_writer.addData3f(x, y, z)
-        grad_index = int(max(0, min(param_norm * (length_grad - 1), length_grad - 1)))
-        color = royg_gradient[grad_index]
-        color_writer.addData4f(color[2], color[1], color[0], 1.0)
-
-    points = Geom(vertex_data)
-    primitive = GeomPoints(Geom.UH_static)
-    primitive.addNextVertices(len(data))
-    points.addPrimitive(primitive)
-
-    geom_node = GeomNode("log_point_cloud_node")
-    geom_node.addGeom(points)
-
-    node_path = parent.attachNewNode(geom_node)
-    node_path.setRenderModeThickness(int(point_size))
-
     return node_path
 
 
@@ -248,7 +175,6 @@ def load_logs_and_create_point_cloud(
 
     filtered_data = filter_data(data, param_values, filter_type, custom_min, custom_max)
     if not filtered_data:
-        print(f"Файл {file_path}: нет точек для отображения после фильтрации.")
         return None, None, None
 
     data, param_values = zip(*filtered_data)
@@ -307,27 +233,17 @@ def filter_data(data, param_values, filter_type, custom_min, custom_max):
 
 
 def compute_z_range(data):
-    """Вычисляет минимальное и максимальное значение по оси Z."""
     z_values = [point[2] for point in data]
     return min(z_values), max(z_values)
 
 
 def calculate_center(points):
-    """Вычисляет центр по всем точкам."""
     if not points:
         print("Ошибка: список точек пуст. Центр установлен в (0, 0, 0).")
-        return Point3(0, 0, 0)
-
-    x_total, y_total, z_total = 0, 0, 0
-    for point in points:
-        x_total += point[0]
-        y_total += point[1]
-        z_total += point[2]
-
+        return LPoint3f(0, 0, 0)
     num_points = len(points)
-    center = Point3(x_total / num_points, y_total / num_points, z_total / num_points)
-    print(f"[DEBUG] Центр вычислен: {center}")
-    return center
+    x, y, z = map(sum, zip(*points))
+    return LPoint3f(x / num_points, y / num_points, z / num_points)
 
 
 def get_result(file_path, parent, gradient_param, custom_min, custom_max, filter_type, size, point_step, point):

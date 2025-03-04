@@ -12,18 +12,16 @@ class Screen(ABC):
 
         self.node = NodePath(name)
         self.node.reparentTo(base.render)
-        self.node.hide()  # По умолчанию скрываем сцену
+        self.node.hide()
 
     @abstractmethod
     def setup(self):
         pass
 
     def show(self):
-        print(f"🔵 Показываем {self.node.getName()}")
         self.node.show()
 
     def hide(self):
-        print(f"⚫ Прячем {self.node.getName()}")
         self.node.hide()
 
     def destroy(self):

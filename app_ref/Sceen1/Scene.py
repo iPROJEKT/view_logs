@@ -1,5 +1,5 @@
 from app.core.config import ConfigApp
-from app.core.splash_screen_control.screen_saver_logic import SplashScreenLogic
+from app_ref.splash_screen_control.screen_saver_logic import SplashScreenLogic
 from app_ref.SceneABS.SceneABS import Screen
 
 

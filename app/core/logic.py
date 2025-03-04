@@ -108,12 +108,11 @@ class LogicApp(
     def load_file_list(self, start_date=None, end_date=None):
         """Загрузить список файлов в скроллируемый фрейм."""
         self.save_camera_allowed = False
+        # Фильтруем файлы по дате
         file_names = [
             filename for filename in os.listdir(LOGS_DIR)
             if filename.endswith('.dt') and self.filter_by_date(filename, start_date, end_date)
         ]
-
-        # Сортируем файлы по числовой части имени (логическое время)
         file_names.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
 
         element_height = 0.1

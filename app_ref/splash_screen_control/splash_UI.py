@@ -11,7 +11,7 @@ class SplashScreenUI:
         self.base.taskMgr.doMethodLater(3, hide_callback, "hideSplashTask")
 
     def create_splash_screen(self):
-        logo_texture = self.base.loader.loadTexture('static/img/trinititech.jpg')
+        logo_texture = self.base.loader.loadTexture(self.config.splash_logo)
         cm = CardMaker("splash")
         cm.setFrame(-1, 1, -1.3, 1.3)
         self.splash = NodePath(cm.generate())

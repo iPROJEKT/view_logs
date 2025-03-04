@@ -3,17 +3,21 @@ from panda3d.core import TextNode
 
 
 class PopMenuUI:
-    def __init__(self, parent, config):
-        self.parent = parent
+    def __init__(self, config, filter_frame, value_labels, base, **kwargs):
         self.config = config
+        self.filter_frame = filter_frame
+        self.value_labels = value_labels
+        self.base = base
 
-        custom_font = self.parent.loader.loadFont(self.config.custom_font)
+        self.extra_arg = kwargs
+
+        custom_font = self.base.loader.loadFont(self.config.custom_font)
 
         self.magnitude_menu_filter = DirectOptionMenu(
             text="Фильтрация",
             items=["All", "Into", "Out"],
             text_font=custom_font,
-            parent=self.parent.filter_frame,
+            parent=self.filter_frame,
             pos=self.config.pos_optional_menu,
             scale=self.config.scale_big,
             frameSize=self.config.frame_size_optional_menu,
@@ -29,8 +33,7 @@ class PopMenuUI:
         self.magnitude_menu = DirectOptionMenu(
             text="Величина",
             items=["I", "U", "WFS", 'pres1', 'pres2', 'flow1', 'flow2'],
-            parent=self.parent.value_frame,
-            command=self.parent.update_labels,
+            parent=self.value_labels,
             pos=self.config.pos_optional_menu,
             scale=self.config.scale_big,
             frameSize=self.config.frame_size_optional_menu,
@@ -42,22 +45,4 @@ class PopMenuUI:
             item_text_fg=self.config.item_text_color_white,
             item_frameColor=self.config.item_frame_color_black,
             text_fg=self.config.text_color
-
         )
-
-    def update_labels(self, selected_item):
-        if selected_item == "I":
-            self.parent.parameters_up_help["text"] = "I max"
-            self.parent.parameters_down_help["text"] = "I min"
-        elif selected_item == "U":
-            self.parent.parameters_up_help["text"] = "U max"
-            self.parent.parameters_down_help["text"] = "U min"
-        elif selected_item == "WFS":
-            self.parent.parameters_up_help["text"] = "WFS max"
-            self.parent.parameters_down_help["text"] = "WFS min"
-        elif selected_item == "pres1" or selected_item == "pres2":
-            self.parent.parameters_up_help["text"] = "бар max"
-            self.parent.parameters_down_help["text"] = "бар min"
-        elif selected_item == "flow1" or selected_item == "flow2":
-            self.parent.parameters_up_help["text"] = "л/мин max"
-            self.parent.parameters_down_help["text"] = "л/мин min"

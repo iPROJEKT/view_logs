@@ -8,7 +8,7 @@ class FramesUI:
         self.date_frame = DirectFrame(
             frameColor=(1, 1, 1, 1),
             frameSize=(-1, 1, -0.5, 0.5),
-            pos=(0, 0, 0)
+            pos=(0, 0, 0),
         )
         self.scroll_frame = DirectScrolledFrame(
             canvasSize=(-0.6, 0.6, -5, 0),
@@ -18,4 +18,7 @@ class FramesUI:
             parent=self.date_frame,
             autoHideScrollBars=True,
         )
+        self.date_frame.hide()
+
+    def hide(self):
         self.date_frame.hide()

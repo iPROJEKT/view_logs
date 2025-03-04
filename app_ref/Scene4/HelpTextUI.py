@@ -1,13 +1,18 @@
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenText import OnscreenText
-from panda3d.core import TextNode
 
 
-class TextUI:
-    def __init__(self, parent, config):
+class HelpTextUI:
+    def __init__(self, config, parent, base, **kwargs):
+        self.parent = parent
+        self.base = base
         self.config = config
+        self.kwargs = kwargs
 
-        custom_font = self.parent.loader.loadFont(self.config.custom_font)
+        self.ri = kwargs.get("ri", None)
+        self.le = kwargs.get("le", None)
+
+        custom_font = self.base.loader.loadFont(self.config.custom_font)
 
         self.filters = DirectLabel(
             text="Фильтр",
@@ -15,17 +20,17 @@ class TextUI:
             pos=(-0.15, 0, -0.48),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.text_color,
         )
         self.parameters_label = DirectLabel(
             text="Параметр",
             scale=0.08,
-            pos=(-0.156, 0, -0.65),
+            pos=(-0.156, 0, -0.63),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.text_color,
         )
@@ -35,7 +40,7 @@ class TextUI:
             pos=(-0.15, 0, -0.32),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.text_color,
         )
@@ -45,7 +50,7 @@ class TextUI:
             pos=(-0.15, 0, -0.17),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.text_color,
         )
@@ -55,56 +60,20 @@ class TextUI:
             pos=(0, 0, 0.8),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.text_color,
         )
-        self.choise_text = DirectLabel(
+        self.choice_text = DirectLabel(
             text="Режим отображения: Точки",
             scale=0.06,
             pos=(0, 0, 0.3),
             text_font=custom_font,
             frameColor=(0, 0, 0, 0),
-            parent=self.parent.left_user_frame,
+            parent=self.parent,
             relief=None,
             text_fg=self.config.background_color_not_active,
         )
-        self.parameters_up_help = DirectLabel(
-            text="I max",
-            scale=0.08,
-            pos=(0.8, 0, 0.8),
-            text_font=custom_font,
-            frameColor=(0, 0, 0, 0),
-            relief=None,
-            text_fg=self.config.text_color,
-            text_bg=self.config.background_color_not_active,
-        )
-        self.parameters_down_help = DirectLabel(
-            text="I min",
-            scale=0.08,
-            pos=(0.8, 0, -0.85),
-            text_font=custom_font,
-            frameColor=(0, 0, 0, 0),
-            relief=None,
-            text_fg=self.config.text_color,
-            text_bg=self.config.background_color_not_active,
-        )
-        self.slider_start = OnscreenText(
-            text='2',
-            scale=0.08,
-            font=custom_font,
-            fg=self.config.text_color,
-            pos=(-0.6, -0.7)
-        )
-        self.slider_end = OnscreenText(
-            text='2',
-            scale=0.08,
-            font=custom_font,
-            fg=self.config.text_color,
-            pos=(0.6, -0.7)
-        )
-        self.slider_start.hide()
-        self.slider_end.hide()
         self.alt_cam = DirectLabel(
             text='Свободная камера без ортографии',
             scale=0.05,
@@ -115,16 +84,20 @@ class TextUI:
             text_fg=self.config.text_color,
             text_bg=self.config.background_color_not_active,
         )
-        self.hover_label = DirectLabel(
-            text=self.config.hover_for_pep_8(),
-            scale=0.07,
-            frameColor=(1, 1, 1, 0.8),
-            text_fg=self.config.text_color,
-            text_bg=self.config.background_color_not_active,
-            pos=(0, 0, 0.1),
-            text_font=custom_font,
+        self.slider_right_time = OnscreenText(
+            text=self.ri,
+            scale=0.08,
+            font=custom_font,
+            fg=self.config.text_color,
+            pos=(0.6, -0.7)
         )
+        self.slider_left_time = OnscreenText(
+            text=self.le,
+            scale=0.08,
+            font=custom_font,
+            fg=self.config.text_color,
+            pos=(-0.6, -0.7)
+        )
+        self.slider_right_time.hide()
+        self.slider_left_time.hide()
         self.alt_cam.hide()
-        self.parameters_up_help.hide()
-        self.parameters_down_help.hide()
-        self.hover_label.hide()

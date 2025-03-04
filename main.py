@@ -1,5 +1,6 @@
 import logging
 
+from app.core.logic import LogicApp
 from app.core.tools.const import (
     LOG_FORM,
     LOG_FILEMOD,

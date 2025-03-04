@@ -19,7 +19,8 @@ setup(
                 '**/*.jpg',
                 '**/*.egg',
                 '**/*.ttf',
-                '**/*.dt'
+                '**/*.dt',
+                '**/*.DT'
             ],
             "icons": {
                 'WAAMMER POST-ANALYSIS': ["**/icon2.png",]

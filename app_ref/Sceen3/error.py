@@ -2,28 +2,30 @@ from direct.gui.DirectDialog import OkDialog
 
 
 class ErrorDialogsUI:
-    def __init__(self, scene, config, base):
+    def __init__(self, config, base, **kwargs):
         self.config = config
         self.base = base
-        self.scene = scene
 
+        self.extra_arg = kwargs
+        self.frame = kwargs.get("frame", None)
         custom_font = self.base.loader.loadFont(self.config.custom_font)
 
-        self.error_date_choice = OkDialog(
-            dialogName="ErrorData",
-            text="Ошибка: конечная дата должна быть позже начальной!",
+        self.error_empty_logs = OkDialog(
+            dialogName="ErrorDialog",
+            text="Ошибка: Вы не выбрали точки для просмотра!",
             buttonTextList=["OK"],
             command=self.close_error_dialog,
             text_font=custom_font,
             text_fg=self.config.text_color,
             relief=None
         )
-        self.error_date_choice.hide()
+        self.error_empty_logs.hide()
 
     def show_error_dialog(self):
         """Показать диалог ошибки."""
-        self.error_date_choice.show()
+        self.error_empty_logs.show()
+        self.frame.hide()
 
     def close_error_dialog(self, _):
-        self.error_date_choice.hide()
-        self.scene.ui.main_frame.show()
+        self.error_empty_logs.hide()
+        self.frame.show()

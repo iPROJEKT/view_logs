@@ -5,6 +5,7 @@ class CompassControl:
     def __init__(self, base):
         self.base = base
 
+        # Создаем 2D-узел для стрелки компаса
         self.compass_node = NodePath("CompassNode")
         self.compass_node.reparentTo(self.base.aspect2d)
 

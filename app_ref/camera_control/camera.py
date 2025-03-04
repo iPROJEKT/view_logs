@@ -1,14 +1,16 @@
-from math import sin, cos, radians, degrees
+from math import radians, cos, sin
 
-from panda3d.core import WindowProperties, Vec3, Point3, Quat, PerspectiveLens, OrthographicLens, Vec2
+from panda3d.core import (
+    WindowProperties, Vec3, Point3, Quat,
+    PerspectiveLens, OrthographicLens, Vec2
+)
 
-from app.core.UI_control.variables import Variables
-from app.core.compas.compass import CompassControl
-from app.core.lsk.lsk import LSKControl
+from app_ref.compas.compass import CompassControl
+from app_ref.lsk.lsk import LSKControl
 
 
 class CameraControl(LSKControl, CompassControl):
-    def __init__(self, base):
+    def __init__(self, base, center_node, alt_cam_text):
         self.base = base
         LSKControl.__init__(self, base)
         CompassControl.__init__(self, base)
@@ -29,6 +31,8 @@ class CameraControl(LSKControl, CompassControl):
         self.is_orthographic = False
         self.lens = PerspectiveLens()
         self.lens.setFov(60)
+        self.center_node = center_node
+        self.alt_cam_text = alt_cam_text
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -62,15 +66,15 @@ class CameraControl(LSKControl, CompassControl):
         """Обновляет текстовое отображение статуса камеры."""
         if self.camera_mode:
             if self.is_orthographic:
-                self.base.alt_cam['text'] = 'Якорная камера с ортографическим режимом'
+                self.alt_cam_text['text'] = 'Якорная камера с ортографическим режимом'
             else:
-                self.base.alt_cam['text'] = 'Якорная камера без ортографического режима'
+                self.alt_cam_text['text'] = 'Якорная камера без ортографического режима'
         else:
             if self.is_orthographic:
-                self.base.alt_cam['text'] = 'Свободная камера с ортографическим режимом'
+                self.alt_cam_text['text'] = 'Свободная камера с ортографическим режимом'
             else:
-                self.base.alt_cam['text'] = 'Свободная камера без ортографического режима'
-        print(f"[STATUS] {self.base.alt_cam['text']}")
+                self.alt_cam_text['text'] = 'Свободная камера без ортографического режима'
+        print(f"[STATUS] {self.alt_cam_text['text']}")
 
     def toggle_camera_mode(self):
         """Переключение между режимами камеры."""
@@ -101,7 +105,7 @@ class CameraControl(LSKControl, CompassControl):
         initial_pos = Vec3(-63.80, -528.95, 140.59)
 
         self.base.camera.setPos(initial_pos)
-        self.base.camera.lookAt(Variables.center)
+        self.base.camera.lookAt(self.center_node)
 
         print(f"Camera initialized at position: {initial_pos},")
 
@@ -140,36 +144,22 @@ class CameraControl(LSKControl, CompassControl):
 
     def handle_anchor_rotation(self):
         self.ignore_first_move()
-        self.anchor_point = Point3(Variables.center)
+        self.anchor_point = Point3(self.center_node)
 
         if self.dx != 0 or self.dy != 0:
-            # Изменяем углы на основе движения мыши
             delta_h = self.dx * self.rotation_speed_for_anchor
             delta_p = self.dy * self.rotation_speed_for_anchor
-
-            # Обновляем текущие углы
-            self.current_h = (self.current_h - delta_h) % 360  # Азимут (горизонтальное вращение)
-            self.current_p = max(-89, min(89, self.current_p - delta_p))  # Наклон (вертикальное вращение)
-
-            # Преобразуем углы в радианы
+            self.current_h = (self.current_h - delta_h) % 360
+            self.current_p = max(-89, min(89, self.current_p - delta_p))
             h_rad = radians(self.current_h)
             p_rad = radians(self.current_p)
-
-            # Вычисляем новую позицию камеры в сферической системе координат
             distance = (self.base.camera.getPos() - self.anchor_point).length()
             x = distance * cos(p_rad) * cos(h_rad)
             y = distance * cos(p_rad) * sin(h_rad)
             z = distance * sin(p_rad)
-
-            # Устанавливаем новую позицию камеры относительно якорной точки
             new_pos = self.anchor_point + Vec3(x, y, z)
             self.base.camera.setPos(new_pos)
-
-            # Направляем камеру на якорную точку
             self.base.camera.lookAt(self.anchor_point)
-
-            print(f"[DEBUG] New H: {self.current_h}, New P: {self.current_p}, Camera Pos: {self.base.camera.getPos()}")
-
         self.reset_mouse_position()
 
     def handle_camera_pan(self):
@@ -218,7 +208,11 @@ class CameraControl(LSKControl, CompassControl):
         # Проверяем, успешно ли переместился указатель
         mouse_data = self.base.win.getPointer(0)
         print(
-            f"[DEBUG] Mouse reset: Current position ({mouse_data.getX()}, {mouse_data.getY()}), Center ({center_x}, {center_y})"
+            f"[DEBUG] Mouse reset: Current position ({
+                mouse_data.getX()
+            }, {
+                mouse_data.getY()
+            }), Center ({center_x}, {center_y})"
         )
 
     def on_mouse_press(self):
@@ -283,4 +277,3 @@ class CameraControl(LSKControl, CompassControl):
 
             self.base.camera.setPos(new_pos)
             print(f"[ZOOM] Camera position: {self.base.camera.getPos()}")
-
