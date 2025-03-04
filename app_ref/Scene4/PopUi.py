@@ -11,6 +11,9 @@ class PopMenuUI:
 
         self.extra_arg = kwargs
 
+        self.top = kwargs.get("top", None)
+        self.bottom = kwargs.get("bottom", None)
+
         custom_font = self.base.loader.loadFont(self.config.custom_font)
 
         self.magnitude_menu_filter = DirectOptionMenu(
@@ -44,5 +47,27 @@ class PopMenuUI:
             item_relief=DGG.FLAT,
             item_text_fg=self.config.item_text_color_white,
             item_frameColor=self.config.item_frame_color_black,
-            text_fg=self.config.text_color
+            text_fg=self.config.text_color,
+            command=self.change_help_text
         )
+
+    def change_help_text(self, selected_item=None):
+        # Если selected_item не передан, берем текущий выбор из magnitude_menu
+        if selected_item is None:
+            selected_item = self.magnitude_menu.get()
+
+        # Словарь единиц измерения
+        change = {
+            'I': 'I',
+            'U': 'U',
+            'WFS': 'WFS',
+            'pres1': 'Bar',
+            'pres2': 'Bar',
+            'flow1': 'L/min',
+            'flow2': 'L/min',
+        }
+
+        unit = change.get(selected_item, 'Unknown')
+        self.top.setText(f"{unit} max")
+        self.bottom.setText(f"{unit} min")
+

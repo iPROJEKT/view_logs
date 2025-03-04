@@ -46,18 +46,20 @@ class Scene4(Screen):
         self.image = ImageUI(self.config_app)
         self.slider = SliderUI()
         self.slider.slider.scene_ref = self
-        self.pop_menu = PopMenuUI(
-            self.config_app,
-            self.frames.filter_frame,
-            self.frames.value_frame,
-            base,
-        )
         self.help_text = HelpTextUI(
             self.config_app,
             self.frames.left_user_frame,
             base,
             ri='',
             le=''
+        )
+        self.pop_menu = PopMenuUI(
+            self.config_app,
+            self.frames.filter_frame,
+            self.frames.value_frame,
+            base,
+            top=self.help_text.help_text_top,
+            bottom=self.help_text.help_text_bottom
         )
         self.buttons = ButtonsUI(
             self.ui_node,
@@ -128,6 +130,8 @@ class Scene4(Screen):
         print("[DEBUG] Hiding fields")
         self.buttons.open_left_panel_button.hide()
         self.buttons.back_button_from_point.hide()
+        self.help_text.help_text_top.hide()
+        self.help_text.help_text_bottom.hide()
         self.help_text.alt_cam.hide()
         self.input.number_input_top.hide()
         self.input.number_input_bottom.hide()
@@ -229,6 +233,8 @@ class Scene4(Screen):
     def show_fields(self):
         print("[DEBUG] Showing fields")
         self.buttons.open_left_panel_button.show()
+        self.help_text.help_text_top.show()
+        self.help_text.help_text_bottom.show()
         self.help_text.alt_cam.show()
         self.input.number_input_top.show()
         self.input.number_input_bottom.show()

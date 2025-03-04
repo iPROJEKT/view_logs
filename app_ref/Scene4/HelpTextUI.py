@@ -98,6 +98,20 @@ class HelpTextUI:
             fg=self.config.text_color,
             pos=(-0.6, -0.7)
         )
+        self.help_text_top = OnscreenText(
+            text='I max',
+            pos=(1.15, 0.8),
+            font=custom_font,
+            fg=self.config.text_color,
+        )
+        self.help_text_bottom = OnscreenText(
+            text='I min',
+            pos=(1.15, -0.85),
+            font=custom_font,
+            fg=self.config.text_color,
+        )
         self.slider_right_time.hide()
         self.slider_left_time.hide()
         self.alt_cam.hide()
+        self.help_text_top.hide()
+        self.help_text_bottom.hide()
