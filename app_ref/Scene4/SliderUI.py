@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.DirectLabel import DirectLabel
@@ -35,10 +35,28 @@ class SliderUI:
         if hasattr(self.slider, 'scene_ref'):
             scene = self.slider.scene_ref
             slider_value = self.slider['value']
-            time_range = scene.right_time_slider - scene.left_time_slider
-            current_time = scene.left_time_slider + (slider_value / 100) * time_range
-            current_dt = datetime.fromtimestamp(current_time).strftime('%H:%M:%S')
-            self.time_label['text'] = f"{current_dt}"
+
+            # Преобразуем строки времени из scene в datetime
+            try:
+                left_dt = datetime.strptime(scene.left_time_slider, '%Y-%m-%d %H:%M')
+                right_dt = datetime.strptime(scene.right_time_slider, '%Y-%m-%d %H:%M')
+            except ValueError as e:
+                print(f"[DEBUG] ValueError in show_time: {e}")
+                self.time_label['text'] = "Invalid Time"
+                self.time_label.show()
+                return
+
+            # Вычисляем разницу времени в секундах
+            time_range = (right_dt - left_dt).total_seconds()
+            if time_range <= 0:
+                self.time_label['text'] = "Invalid Range"
+                self.time_label.show()
+                return
+
+            # Вычисляем текущее время на основе положения слайдера
+            current_time = left_dt + timedelta(seconds=(slider_value / 100) * time_range)
+            current_dt_str = current_time.strftime('%m-%d %H:%M')
+            self.time_label['text'] = f"{current_dt_str}"
             self.time_label.show()
 
     def hide_time(self, event):

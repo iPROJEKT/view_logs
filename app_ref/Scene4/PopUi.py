@@ -35,7 +35,7 @@ class PopMenuUI:
         )
         self.magnitude_menu = DirectOptionMenu(
             text="Величина",
-            items=["I", "U", "WFS", 'pres1', 'pres2', 'flow1', 'flow2'],
+            items=["I", "U", "WFS", 'pres1', 'pres2', 'flow1', 'flow2', 'motor'],
             parent=self.value_labels,
             pos=self.config.pos_optional_menu,
             scale=self.config.scale_big,
@@ -52,11 +52,8 @@ class PopMenuUI:
         )
 
     def change_help_text(self, selected_item=None):
-        # Если selected_item не передан, берем текущий выбор из magnitude_menu
         if selected_item is None:
             selected_item = self.magnitude_menu.get()
-
-        # Словарь единиц измерения
         change = {
             'I': 'I',
             'U': 'U',
@@ -65,6 +62,7 @@ class PopMenuUI:
             'pres2': 'Bar',
             'flow1': 'L/min',
             'flow2': 'L/min',
+            'motor': 'I'
         }
 
         unit = change.get(selected_item, 'Unknown')

@@ -97,8 +97,6 @@ class CameraControl(LSKControl, CompassControl):
         self.dx = max(-100, min(100, self.dx))
         self.dy = max(-100, min(100, self.dy))
 
-        print(f"[DEBUG] Mouse moved: dx={self.dx}, dy={self.dy}")
-
     def set_initial_camera_position(self):
         """Устанавливаем начальную позицию и ориентацию камеры."""
         print("Setting initial camera position...")
@@ -106,8 +104,6 @@ class CameraControl(LSKControl, CompassControl):
 
         self.base.camera.setPos(initial_pos)
         self.base.camera.lookAt(self.center_node)
-
-        print(f"Camera initialized at position: {initial_pos},")
 
     def show_cursor(self):
         """Показывает курсор мыши."""
@@ -187,7 +183,6 @@ class CameraControl(LSKControl, CompassControl):
         self.ignore_first_move()
 
         if self.dx != 0 or self.dy != 0:
-            print(f"[ROTATE] Mouse moved: dx={self.dx}, dy={self.dy}")
 
             current_hpr = self.base.camera.getHpr()
             new_h = current_hpr.getX() - self.dx * self.rotation_speed
@@ -196,7 +191,6 @@ class CameraControl(LSKControl, CompassControl):
             new_p = max(-90, min(90, new_p))
 
             self.base.camera.setHpr(new_h, new_p, current_hpr.getZ())
-            print(f"[ROTATE] Camera rotation: {self.base.camera.getHpr()}")
 
         self.reset_mouse_position()
 
@@ -205,15 +199,7 @@ class CameraControl(LSKControl, CompassControl):
         center_y = self.base.win.getProperties().getYSize() // 2
         self.base.win.movePointer(0, center_x, center_y)
 
-        # Проверяем, успешно ли переместился указатель
         mouse_data = self.base.win.getPointer(0)
-        print(
-            f"[DEBUG] Mouse reset: Current position ({
-                mouse_data.getX()
-            }, {
-                mouse_data.getY()
-            }), Center ({center_x}, {center_y})"
-        )
 
     def on_mouse_press(self):
         self.ignore_first_mouse_movement = False
@@ -221,13 +207,11 @@ class CameraControl(LSKControl, CompassControl):
         self.mouse_is_pressed = True
         self.hide_cursor()
         self.reset_mouse_position()
-        print("[PRESS] Mouse button pressed (Right)")
 
     def on_mouse_release(self):
         self.mouse_is_pressed = False
         self.show_cursor()
         self.reset_mouse_position()
-        print("[RELEASE] Mouse button released (Right)")
 
     def on_left_mouse_press(self):
         self.ignore_first_mouse_movement = False
@@ -235,12 +219,10 @@ class CameraControl(LSKControl, CompassControl):
         self.left_mouse_is_pressed = True
         self.reset_mouse_position()
         self.hide_cursor()
-        print("[PRESS] Mouse button pressed (Left)")
 
     def on_left_mouse_release(self):
         self.left_mouse_is_pressed = False
         self.show_cursor()
-        print("[RELEASE] Mouse button released (Left)")
 
     def on_wheel_up(self):
         """Обработчик прокрутки колесика вверх."""
@@ -276,4 +258,3 @@ class CameraControl(LSKControl, CompassControl):
             new_pos = current_pos + zoom_vector
 
             self.base.camera.setPos(new_pos)
-            print(f"[ZOOM] Camera position: {self.base.camera.getPos()}")

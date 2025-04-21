@@ -70,7 +70,7 @@ class Scene3(Screen):
 
         file_names = [
             f for f in os.listdir(LOGS_DIR)
-            if f.endswith('.dt') and filter_by_date(f, start_date, end_date)
+            if f.lower().endswith('.dt') and filter_by_date(f, start_date, end_date)
         ]
         file_names.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
         element_height = 0.1
@@ -120,13 +120,12 @@ class Scene3(Screen):
         if len(self.file_names) == 0:
             self.error.show_error_dialog()
         else:
-            # Пересчитываем минимальное и максимальное время для всех выбранных файлов
             dates = [extract_prog_number(file_name)[1] for file_name in self.file_names if extract_prog_number(file_name)[1] != datetime.min]
             if dates:
                 self.left_data_for_slider = min(dates)
                 self.right_data_for_slider = max(dates)
             else:
-                self.left_data_for_slider = datetime.now()  # Если нет валидных дат, используем текущее время
+                self.left_data_for_slider = datetime.now()
                 self.right_data_for_slider = datetime.now()
             self.switch_callback(
                 4, file_names=self.file_names,

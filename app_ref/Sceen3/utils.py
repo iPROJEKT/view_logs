@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 
-REGULAR_FOR_MATCH = r'log_(\d+)\.dt'
+REGULAR_FOR_MATCH = r'(?i)log_(\d+)\.dt'
 SELECT_PROG_DATE = '%Y-%m-%d'
 EXTRACT_PROG_DATE = '%d-%m-%Y'
 
