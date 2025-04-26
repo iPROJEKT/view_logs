@@ -6,7 +6,6 @@ from panda3d.core import (
     GeomVertexFormat, Geom, GeomPoints,
     GeomNode, Point3, LineSegs, LPoint3f
 )
-from app.core.tools.const import LOGS_DIR
 
 
 def load_log_data(file_path):

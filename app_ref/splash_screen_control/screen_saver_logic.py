@@ -1,6 +1,6 @@
 from direct.showbase.ShowBaseGlobal import render2d
 
-from app.core.splash_screen_control.splash_UI import SplashScreenUI
+from app_ref.splash_screen_control.splash_UI import SplashScreenUI
 
 
 class SplashScreenLogic:

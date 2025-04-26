@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 
 from panda3d.core import NodePath
 
-from app.core.tools.const import LOGS_DIR
-from app_ref.Sceen3.utils import extract_prog_number
 from app_ref.Scene4.ButtonUI import ButtonsUI
 from app_ref.Scene4.FrameUI import FramesUI
 from app_ref.Scene4.HelpTextUI import HelpTextUI
@@ -18,6 +16,7 @@ from app_ref.Scene4.utils import load_logs_and_create_point_cloud, calculate_cen
 from app_ref.SceneABS.SceneABS import Screen
 from app_ref.camera_control.camera import CameraControl
 from app_ref.config import ConfigApp
+from app_ref.core.tools.const import LOGS_DIR
 
 
 class Scene4(Screen):
@@ -90,53 +89,46 @@ class Scene4(Screen):
         self.slider.slider['command'] = self.on_slider_change
 
     def on_param_change(self, *args):
-        """Обработчик изменения параметров UI."""
-        print(f"[DEBUG] Параметры изменены: gradient_param={self.pop_menu.magnitude_menu.get()}, "
-              f"filter_type={self.pop_menu.magnitude_menu_filter.get()}, "
-              f"custom_min={self.input.number_input_bottom.get()}, "
-              f"custom_max={self.input.number_input_top.get()}, "
-              f"point_size={self.input.size_input.get()}, "
-              f"point_step={self.input.spliter_input.get()}")
+        """Handle UI parameter changes."""
         self.update_layers()
 
     def clear_point_cloud_nodes(self):
-        """Очищает все текущие облака точек."""
-        print(f"[DEBUG] Очистка {len(self.point_cloud_nodes)} облаков точек")
+        """Clear all current point cloud nodes."""
         for node in self.point_cloud_nodes:
-            if isinstance(node, tuple):
-                node_path = node[0]
-            else:
-                node_path = node
+            node_path = node[0] if isinstance(node, tuple) else node
             if isinstance(node_path, NodePath):
-                print(f"[DEBUG] Удаление node_path={node_path}")
                 node_path.removeNode()
         self.point_cloud_nodes.clear()
 
     def on_back_button_from_point(self):
-        """Скрывает все элементы сцены, очищает данные и переключает на Scene3."""
+        """Hide scene elements, clear data, and switch to Scene3 with file names."""
         try:
-            print("[DEBUG] Back button pressed")
             self.hide_fields()
             self.node.hide()
             self.clear_point_cloud_nodes()
-            if self.camera_control:
-                try:
-                    self.camera_control.cleanup()
-                except AttributeError:
-                    print("[DEBUG] CameraControl has no cleanup method, skipping")
-                self.camera_control = None
+            self._cleanup_camera()
+            file_names = self.file_names[:]
             self.file_names = []
             self.all_data_point = []
             self.left_time_slider = 0
             self.right_time_slider = 0
             self.update_slider_text()
-            self.switch_callback(3)
+            # Передаём file_names в Scene3 через switch_callback
+            self.switch_callback(3, file_names=file_names)
         except Exception as e:
-            print(f"[ERROR] Exception in on_back_button_from_point: {e}")
+            self.error.show_error_dialog(f"Ошибка возврата на Scene3: {e}")
+
+    def _cleanup_camera(self):
+        """Clean up camera control if it exists."""
+        if self.camera_control:
+            try:
+                self.camera_control.cleanup()
+            except AttributeError:
+                pass
+            self.camera_control = None
 
     def hide_fields(self):
-        """Скрывает все поля UI."""
-        print("[DEBUG] Hiding fields")
+        """Hide all UI fields."""
         self.buttons.open_left_panel_button.hide()
         self.buttons.back_button_from_point.hide()
         self.help_text.help_text_top.hide()
@@ -153,128 +145,136 @@ class Scene4(Screen):
                 self.camera_control.axes_node.hide()
                 self.camera_control.compass_node.hide()
             except AttributeError:
-                print("[DEBUG] CameraControl has no axes_node or compass_node, skipping")
+                pass
 
     def on_slider_change(self):
-        """Обработчик изменения слайдера для управления слоями."""
+        """Handle slider changes for layer updates."""
+        if not self.file_names:
+            return
         slider_value = self.slider.slider['value']
-        print(f"[DEBUG] Слайдер изменен: slider_value={slider_value}")
         if self.slider_timer is not None:
             self.slider_timer.cancel()
         self.slider_timer = threading.Timer(0.5, self.update_layers, args=(slider_value,))
         self.slider_timer.start()
 
     def update_layers(self, slider_value=None):
-        """Обновляет отображаемые слои пропорционально положению слайдера."""
+        """Update displayed layers based on slider position."""
         if slider_value is None:
             slider_value = self.slider.slider['value']
 
         if not self.file_names:
-            print("[DEBUG] Нет файлов для отображения")
             return
 
-        try:
-            left_dt = datetime.strptime(self.left_time_slider, '%Y-%m-%d %H:%M')
-            right_dt = datetime.strptime(self.right_time_slider, '%Y-%m-%d %H:%M')
-            time_range = (right_dt - left_dt).total_seconds()
-            if time_range <= 0:
-                print("[DEBUG] Некорректный временной диапазон")
-                self.error.show_error("Ошибка: конечное время должно быть позже начального. Пожалуйста, выберите корректный диапазон.")
-                return
-        except ValueError as e:
-            print(f"[DEBUG] Ошибка парсинга времени: {e}")
-            self.error.show_error(f"Ошибка формата времени: {e}")
+        if not self._validate_time_range():
             return
 
         visible_layers = int((slider_value / 100) * len(self.file_names))
-        print(f"[DEBUG] Обновление слоев: visible_layers={visible_layers}, total_files={len(self.file_names)}")
         self.clear_point_cloud_nodes()
         self.update_point_cloud_nodes(visible_layers)
 
-    def update_point_cloud_nodes(self, visible_layers):
-        """Обновляет облака точек, показывая только заданное количество слоев."""
-        print(f"[DEBUG] Обновление облаков точек: visible_layers={visible_layers}, file_names={self.file_names[:visible_layers]}")
-        empty_files = []
-        error_messages = []
-
-        # Валидация параметров
-        custom_min = self.input.number_input_bottom.get()
-        custom_max = self.input.number_input_top.get()
+    def _validate_time_range(self):
+        """Validate the time range for slider."""
         try:
-            custom_min = float(custom_min) if custom_min else None
-            custom_max = float(custom_max) if custom_max else None
+            left_dt = datetime.strptime(self.left_time_slider, '%Y-%m-%d %H:%M')
+            right_dt = datetime.strptime(self.right_time_slider, '%Y-%m-%d %H:%M')
+            if (right_dt - left_dt).total_seconds() <= 0:
+                self.error.show_error_dialog("Ошибка: конечное время должно быть позже начального.")
+                return False
+        except ValueError as e:
+            self.error.show_error_dialog(f"Ошибка формата времени: {e}")
+            return False
+        return True
+
+    def update_point_cloud_nodes(self, visible_layers):
+        """Update point clouds for the specified number of layers."""
+        params = self._validate_and_get_params()
+        if not params:
+            return
+
+        empty_files, error_messages = self._process_files_for_layers(visible_layers, params)
+
+        if empty_files:
+            self.error.show_error_dialog(f"Пустые файлы: {', '.join(empty_files)}")
+        if error_messages:
+            self.error.show_error_dialog("\n".join(error_messages))
+
+    def _validate_and_get_params(self):
+        """Validate UI parameters and return them."""
+        try:
+            custom_min = float(self.input.number_input_bottom.get()) if self.input.number_input_bottom.get() else None
+            custom_max = float(self.input.number_input_top.get()) if self.input.number_input_top.get() else None
             if custom_min is not None and custom_max is not None and custom_min >= custom_max:
-                print("[DEBUG] Ошибка: custom_min >= custom_max")
-                self.error.show_error("Ошибка: custom_min должен быть меньше custom_max")
-                return
+                self.error.show_error_dialog("Ошибка: custom_min должен быть меньше custom_max")
+                return None
         except ValueError:
-            print("[DEBUG] Ошибка преобразования custom_min/max")
-            self.error.show_error("Ошибка: введены некорректные значения min/max")
-            custom_min = None
-            custom_max = None
+            self.error.show_error_dialog("Ошибка: введены некорректные значения min/max")
+            return None
 
         try:
             size_value = float(self.input.size_input.get()) if self.input.size_input.get() else 1.0
             if size_value <= 0:
-                print("[DEBUG] Ошибка: size_value <= 0")
-                self.error.show_error("Ошибка: размер точки должен быть больше 0")
-                return
+                self.error.show_error_dialog("Ошибка: размер точки должен быть больше 0")
+                return None
         except ValueError:
-            print("[DEBUG] Ошибка преобразования size_value")
-            self.error.show_error("Ошибка: некорректное значение размера точки")
-            return
+            self.error.show_error_dialog("Ошибка: некорректное значение размера точки")
+            return None
 
         try:
             spliter_value = float(self.input.spliter_input.get()) if self.input.spliter_input.get() else 1
             if spliter_value <= 0:
-                print("[DEBUG] Ошибка: spliter_value <= 0")
-                self.error.show_error("Ошибка: шаг точек должен быть больше 0")
-                return
+                self.error.show_error_dialog("Ошибка: шаг точек должен быть больше 0")
+                return None
         except ValueError:
-            print("[DEBUG] Ошибка преобразования spliter_value")
-            self.error.show_error("Ошибка: некорректное значение шага точек")
-            return
+            self.error.show_error_dialog("Ошибка: некорректное значение шага точек")
+            return None
 
-        # Обработка файлов
-        gradient_param = self.pop_menu.magnitude_menu.get() or 'I'
-        filter_type = self.pop_menu.magnitude_menu_filter.get() or 'All'
-        print(f"[DEBUG] Параметры облака: gradient_param={gradient_param}, filter_type={filter_type}, "
-              f"custom_min={custom_min}, custom_max={custom_max}, size_value={size_value}, spliter_value={spliter_value}")
-        for i, file_name in enumerate(self.file_names[:visible_layers]):
-            file_path = os.path.join(LOGS_DIR, file_name)
-            if os.stat(file_path).st_size == 0:
-                print(f"[DEBUG] Пустой файл: {file_name}")
-                empty_files.append(file_name)
+        return {
+            'gradient_param': self.pop_menu.magnitude_menu.get(),
+            'filter_type': self.pop_menu.magnitude_menu_filter.get(),
+            'custom_min': custom_min,
+            'custom_max': custom_max,
+            'size_value': size_value,
+            'spliter_value': spliter_value
+        }
+
+    def _process_files_for_layers(self, visible_layers, params):
+        """Process files to create point clouds for the specified layers."""
+        empty_files = []
+        error_messages = []
+
+        for file_path in self.file_names[:visible_layers]:
+            try:
+                if os.stat(file_path).st_size == 0:
+                    empty_files.append(os.path.basename(file_path))
+                    continue
+            except OSError as e:
+                error_messages.append(f"Ошибка доступа к файлу {os.path.basename(file_path)}: {e}")
                 continue
 
-            print(f"[DEBUG] Обработка файла: {file_name}")
             result = get_result(
                 file_path,
                 self.node,
-                gradient_param,
-                custom_min,
-                custom_max,
-                filter_type,
-                size_value,
-                spliter_value,
+                params['gradient_param'],
+                params['custom_min'],
+                params['custom_max'],
+                params['filter_type'],
+                params['size_value'],
+                params['spliter_value'],
                 self.poit_mode,
             )
             if isinstance(result, NodePath):
-                print(f"[DEBUG] Добавлено облако для {file_name}: node_path={result}")
                 self.point_cloud_nodes.append(result)
             else:
-                print(f"[DEBUG] Не удалось создать облако для {file_name}")
-                error_messages.append(f"Не удалось создать облако точек для {file_name}")
+                error_messages.append(f"Не удалось создать облако точек для {os.path.basename(file_path)}")
 
-        if empty_files:
-            self.error.show_error(f"Пустые файлы: {', '.join(empty_files)}")
-        if error_messages:
-            self.error.show_error("\n".join(error_messages))
+        return empty_files, error_messages
 
     def setup(self):
+        """Hide the node during setup."""
         self.node.hide()
 
     def show_fields(self):
+        """Show all UI fields."""
         self.buttons.open_left_panel_button.show()
         self.help_text.help_text_top.show()
         self.help_text.help_text_bottom.show()
@@ -287,50 +287,109 @@ class Scene4(Screen):
         self.help_text.slider_right_time.show()
 
     def show(self, file_names=None, left_data_for_slider=None, right_data_for_slider=None):
+        """Show the scene with the specified files and slider times."""
         super().show()
         self.buttons.back_button_from_point.show()
-        if left_data_for_slider is not None and right_data_for_slider is not None:
-            self.init_text(left_data_for_slider, right_data_for_slider)
+
+        self._init_slider_text(left_data_for_slider, right_data_for_slider)
+        self.clear_point_cloud_nodes()
+
+        if not file_names:
+            self.error.show_error_dialog("Ошибка: не выбраны файлы для отображения")
+            self.show_fields()
+            return
+
+        valid_files = self._validate_and_store_files(file_names)
+        if not valid_files:
+            self.show_fields()
+            return
+
+        all_data = self._process_files_for_point_clouds()
+        if all_data:
+            self._initialize_scene(all_data)
+        else:
+            self.error.show_error_dialog("Ошибка: нет данных для отображения облаков точек")
+
+        self.show_fields()
+
+    def _init_slider_text(self, left_data, right_data):
+        """Initialize slider text with provided or default times."""
+        if left_data is not None and right_data is not None:
+            self.init_text(left_data, right_data)
         else:
             self.left_time_slider = "1970-01-01 00:00"
-            self.right_time_slider = "1970-01-01 01:00"  # Установлен диапазон по умолчанию
+            self.right_time_slider = "1970-01-01 01:00"
             self.update_slider_text()
-        self.show_fields()
-        if file_names:
-            self.file_names = file_names
-        all_data = []
-        if self.file_names:
-            gradient_param = self.pop_menu.magnitude_menu.get() or 'I'
-            filter_type = self.pop_menu.magnitude_menu_filter.get() or "All"
-            point = self.poit_mode
-            print(f"[DEBUG] Инициализация облаков для файлов: gradient_param={gradient_param}, filter_type={filter_type}")
-            for i in self.file_names:
-                file_path = os.path.join(LOGS_DIR, i)
-                if not os.stat(file_path).st_size == 0:
-                    print(f"[DEBUG] Инициализация облака для {i}")
-                    node_path, _, _, data = load_logs_and_create_point_cloud(
-                        file_path,
-                        self.node,
-                        gradient_param=gradient_param,
-                        filter_type=filter_type,
-                        point=point,
-                    )
-                    if data:
-                        all_data.extend(data)
-                        self.point_cloud_nodes.append(node_path)
 
-            if all_data:
-                self.center_node = calculate_center(all_data)
-                self.init_camera()
-                self.all_data_point = all_data
-                self.update_layers()
+    def _validate_and_store_files(self, file_names):
+        """Validate and store file paths, reporting missing files."""
+        if isinstance(file_names, (tuple, set)):
+            file_names = list(file_names)
+        elif isinstance(file_names, str):
+            file_names = [file_names]
+
+        self.file_names = []
+        missing_files = []
+
+        for file_path in file_names:
+            if not os.path.exists(file_path):
+                missing_files.append(os.path.basename(file_path))
+            else:
+                self.file_names.append(file_path)
+
+        if missing_files:
+            self.error.show_error_dialog(f"Файлы не найдены: {', '.join(missing_files)}")
+
+        return self.file_names
+
+    def _process_files_for_point_clouds(self):
+        """Process files to create initial point clouds."""
+        all_data = []
+        empty_files = []
+        gradient_param = self.pop_menu.magnitude_menu.get()
+        filter_type = self.pop_menu.magnitude_menu_filter.get()
+
+        for file_path in self.file_names:
+            try:
+                if os.stat(file_path).st_size == 0:
+                    empty_files.append(os.path.basename(file_path))
+                    continue
+            except OSError:
+                continue
+
+            try:
+                node_path, _, _, data = load_logs_and_create_point_cloud(
+                    file_path,
+                    self.node,
+                    gradient_param=gradient_param,
+                    filter_type=filter_type,
+                    point=self.poit_mode,
+                )
+                if data:
+                    all_data.extend(data)
+                    self.point_cloud_nodes.append(node_path)
+            except Exception as e:
+                self.error.show_error_dialog(f"Ошибка обработки файла {os.path.basename(file_path)}: {e}")
+
+        if empty_files:
+            self.error.show_error_dialog(f"Пустые файлы: {', '.join(empty_files)}")
+
+        return all_data
+
+    def _initialize_scene(self, all_data):
+        """Initialize the scene with point cloud data."""
+        self.center_node = calculate_center(all_data)
+        self.init_camera()
+        self.all_data_point = all_data
+        self.update_layers()
 
     def init_camera(self):
-        """Создаёт камеру после загрузки данных."""
+        """Initialize the camera after loading data."""
         if not self.camera_control:
             self.camera_control = CameraControl(self.base, self.center_node, self.help_text.alt_cam)
 
     def init_text(self, left_data_for_slider, right_data_for_slider):
+        """Initialize slider text with provided times."""
         try:
             if isinstance(left_data_for_slider, datetime):
                 self.left_time_slider = left_data_for_slider.strftime('%Y-%m-%d %H:%M')
@@ -344,26 +403,20 @@ class Scene4(Screen):
                 right_dt = datetime.strptime(str(right_data_for_slider), '%Y-%m-%d %H:%M:%S')
                 self.right_time_slider = right_dt.strftime('%Y-%m-%d %H:%M')
 
-            # Проверка совпадения времени
             left_dt = datetime.strptime(self.left_time_slider, '%Y-%m-%d %H:%M')
             right_dt = datetime.strptime(self.right_time_slider, '%Y-%m-%d %H:%M')
             if left_dt >= right_dt:
-                print("[DEBUG] Совпадение начального и конечного времени, увеличение right_time на 1 час")
                 right_dt = left_dt + timedelta(hours=1)
                 self.right_time_slider = right_dt.strftime('%Y-%m-%d %H:%M')
 
             self.update_slider_text()
         except ValueError as e:
-            print(f"[DEBUG] Ошибка инициализации времени: {e}")
             self.left_time_slider = "1970-01-01 00:00"
             self.right_time_slider = "1970-01-01 01:00"
             self.update_slider_text()
-            self.error.show_error(f"Ошибка формата времени: {e}")
+            self.error.show_error_dialog(f"Ошибка формата времени: {e}")
 
     def update_slider_text(self):
-        """Обновляет текст в элементах интерфейса HelpTextUI."""
-        left_dt = self.left_time_slider
-        right_dt = self.right_time_slider
-        self.help_text.slider_left_time['text'] = f"{left_dt}"
-        self.help_text.slider_right_time['text'] = f"{right_dt}"
-        print(f"[DEBUG] Обновлены метки слайдера: left={left_dt}, right={right_dt}")
+        """Update slider text in UI."""
+        self.help_text.slider_left_time['text'] = f"{self.left_time_slider}"
+        self.help_text.slider_right_time['text'] = f"{self.right_time_slider}"

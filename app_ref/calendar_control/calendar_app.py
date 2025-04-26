@@ -1,6 +1,5 @@
 from app_ref.calendar_control.calendar_logic import CalendarLogic
 from app_ref.calendar_control.calendar_ui import CalendarUI
-from app.core.config import ConfigApp
 
 
 class CalendarApp:

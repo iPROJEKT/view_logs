@@ -16,7 +16,7 @@ class ButtonsUI:
         self.confirm_button = DirectButton(
             text="Выбрать",
             scale=self.config.scale_big,
-            pos=(1.3, 0, -0.1),
+            pos=(0, 0, 0),
             command=self.on_date_confirmed,
             text_font=custom_font,
             parent=self.frame,
