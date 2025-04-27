@@ -33,6 +33,7 @@ class CameraControl(LSKControl, CompassControl):
         self.lens.setFov(60)
         self.center_node = center_node
         self.alt_cam_text = alt_cam_text
+        self.active = True
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -118,18 +119,17 @@ class CameraControl(LSKControl, CompassControl):
         self.base.win.requestProperties(props)
 
     def update_camera_task(self, task):
-        if self.camera_mode == 0:  # Обычный режим камеры
+        if not self.active:
+            return task.cont  # Ничего не делать
+
+        if self.camera_mode == 0:
             if self.mouse_is_pressed:
                 self.handle_camera_pan()
 
             if self.left_mouse_is_pressed:
                 self.handle_camera_rotation()
 
-        elif self.camera_mode == 1:  # Режим вращения вокруг якорной точки
-            if self.left_mouse_is_pressed:
-                self.handle_anchor_rotation()
-
-        elif self.camera_mode == 1:  # Режим вращения вокруг якорной точки
+        elif self.camera_mode == 1:
             if self.left_mouse_is_pressed:
                 self.handle_anchor_rotation()
 
@@ -258,3 +258,55 @@ class CameraControl(LSKControl, CompassControl):
             new_pos = current_pos + zoom_vector
 
             self.base.camera.setPos(new_pos)
+
+    def activate(self):
+        """Активировать управление камерой."""
+        if not self.active:
+            self.active = True
+
+            # Зарегистрировать обработчики событий
+            self.base.accept('mouse3', self.on_mouse_press)
+            self.base.accept('mouse3-up', self.on_mouse_release)
+            self.base.accept('mouse1', self.on_left_mouse_press)
+            self.base.accept('mouse1-up', self.on_left_mouse_release)
+            self.base.accept('wheel_up', self.on_wheel_up)
+            self.base.accept('wheel_down', self.on_wheel_down)
+            self.base.accept('n', self.toggle_camera_mode)
+            self.base.accept('o', self.toggle_projection)
+
+            # Убедиться, что мышь в правильном состоянии
+            self.base.disableMouse()  # Отключить стандартное управление мышью Panda3D
+            self.show_cursor()  # Показать курсор по умолчанию
+
+            # Добавить задачу обновления
+            self.base.taskMgr.remove("UpdateCameraTask")  # Удалить старую задачу, если есть
+            self.base.taskMgr.add(self.update_camera_task, "UpdateCameraTask")
+
+            print("[CAMERA] Камера активирована.")
+
+    def deactivate(self):
+        """Деактивировать управление камерой."""
+        if self.active:
+            self.active = False
+
+            # Отключить обработчики событий
+            events = [
+                'mouse3', 'mouse3-up', 'mouse1', 'mouse1-up',
+                'wheel_up', 'wheel_down', 'n', 'o'
+            ]
+            for event in events:
+                self.base.ignore(event)
+
+            self.mouse_is_pressed = False
+            self.left_mouse_is_pressed = False
+            self.ignore_first_mouse_movement = False
+            self.ignore_first_left_mouse_movement = False
+
+            # Показать курсор
+            self.show_cursor()
+
+            # Удалить задачу обновления
+            self.base.taskMgr.remove("UpdateCameraTask")
+
+            print("[CAMERA] Камера деактивирована.")
+

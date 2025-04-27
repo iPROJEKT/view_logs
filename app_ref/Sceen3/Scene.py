@@ -108,11 +108,7 @@ class Scene3(Screen):
             self.error.show_error_dialog(f"Файлы не найдены: {', '.join(missing_files)}")
             if not valid_files:
                 return
-
-        # Update selected_files
         self.selected_files = valid_files
-
-        # Compute date range
         dates = [
             extract_prog_number(os.path.basename(file_path))[1]
             for file_path in valid_files

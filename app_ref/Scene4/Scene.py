@@ -106,26 +106,17 @@ class Scene4(Screen):
             self.hide_fields()
             self.node.hide()
             self.clear_point_cloud_nodes()
-            self._cleanup_camera()
+            if self.camera_control:
+                self.camera_control.deactivate()
             file_names = self.file_names[:]
             self.file_names = []
             self.all_data_point = []
             self.left_time_slider = 0
             self.right_time_slider = 0
             self.update_slider_text()
-            # Передаём file_names в Scene3 через switch_callback
             self.switch_callback(3, file_names=file_names)
         except Exception as e:
             self.error.show_error_dialog(f"Ошибка возврата на Scene3: {e}")
-
-    def _cleanup_camera(self):
-        """Clean up camera control if it exists."""
-        if self.camera_control:
-            try:
-                self.camera_control.cleanup()
-            except AttributeError:
-                pass
-            self.camera_control = None
 
     def hide_fields(self):
         """Hide all UI fields."""
@@ -289,6 +280,8 @@ class Scene4(Screen):
     def show(self, file_names=None, left_data_for_slider=None, right_data_for_slider=None):
         """Show the scene with the specified files and slider times."""
         super().show()
+        if self.camera_control:
+            self.camera_control.activate()
         self.buttons.back_button_from_point.show()
 
         self._init_slider_text(left_data_for_slider, right_data_for_slider)
