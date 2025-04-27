@@ -18,17 +18,18 @@ class PopMenuUI:
 
         self.magnitude_menu_filter = DirectOptionMenu(
             text="Фильтрация",
-            items=["All", "Into", "Out"],
+            items=["Все точки", "В диап.", "За диап."],
             text_font=custom_font,
             parent=self.filter_frame,
             pos=self.config.pos_optional_menu,
-            scale=self.config.scale_big,
+            scale=0.07,
             frameSize=self.config.frame_size_optional_menu,
             text_pos=self.config.text_pos,
             relief=None,
             popupMarker_relief=None,
             text_align=TextNode.ACenter,
             item_relief=DGG.FLAT,
+            item_text_font=custom_font,
             item_text_fg=self.config.item_text_color_white,
             item_frameColor=self.config.item_frame_color_black,
             text_fg=self.config.text_color

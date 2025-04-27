@@ -12,11 +12,11 @@ from app_ref.Scene4.InputUI import InputUI
 from app_ref.Scene4.PopUi import PopMenuUI
 from app_ref.Scene4.SliderUI import SliderUI
 from app_ref.Scene4.error import ErrorDialogsUI
-from app_ref.Scene4.utils import load_logs_and_create_point_cloud, calculate_center, get_result
+from app_ref.Scene4.utils import load_logs_and_create_point_cloud, calculate_center, get_result, \
+    get_gradient_param_values, load_log_data
 from app_ref.SceneABS.SceneABS import Screen
 from app_ref.camera_control.camera import CameraControl
 from app_ref.config import ConfigApp
-from app_ref.core.tools.const import LOGS_DIR
 
 
 class Scene4(Screen):
@@ -40,6 +40,7 @@ class Scene4(Screen):
         self.switch_callback = switch_callback
 
         self.ui_node = self.node.attachNewNode("UI_Scene4")
+        self.base.accept('enter', self.update_layers)
 
         self.frames = FramesUI(self.config_app)
         self.image = ImageUI(self.config_app)
@@ -190,7 +191,6 @@ class Scene4(Screen):
             self.error.show_error_dialog("\n".join(error_messages))
 
     def _validate_and_get_params(self):
-        """Validate UI parameters and return them."""
         try:
             custom_min = float(self.input.number_input_bottom.get()) if self.input.number_input_bottom.get() else None
             custom_max = float(self.input.number_input_top.get()) if self.input.number_input_top.get() else None
@@ -219,9 +219,16 @@ class Scene4(Screen):
             self.error.show_error_dialog("Ошибка: некорректное значение шага точек")
             return None
 
+        filter_mapping = {
+            "Все точки": "all",
+            "Внутри диапазона": "inside",
+            "За диап.": "outside"
+        }
+        filter_type = filter_mapping.get(self.pop_menu.magnitude_menu_filter.get(), "all")
+
         return {
             'gradient_param': self.pop_menu.magnitude_menu.get(),
-            'filter_type': self.pop_menu.magnitude_menu_filter.get(),
+            'filter_type': filter_type,
             'custom_min': custom_min,
             'custom_max': custom_max,
             'size_value': size_value,
@@ -233,30 +240,73 @@ class Scene4(Screen):
         empty_files = []
         error_messages = []
 
+        print(f"[DEBUG] Processing {visible_layers} files with params: {params}")
+
         for file_path in self.file_names[:visible_layers]:
+            print(f"[DEBUG] Processing file: {file_path}")
             try:
                 if os.stat(file_path).st_size == 0:
                     empty_files.append(os.path.basename(file_path))
+                    print(f"[DEBUG] File {file_path} is empty")
                     continue
             except OSError as e:
                 error_messages.append(f"Ошибка доступа к файлу {os.path.basename(file_path)}: {e}")
+                print(f"[DEBUG] OSError for file {file_path}: {e}")
                 continue
 
-            result = get_result(
-                file_path,
-                self.node,
-                params['gradient_param'],
-                params['custom_min'],
-                params['custom_max'],
-                params['filter_type'],
-                params['size_value'],
-                params['spliter_value'],
-                self.poit_mode,
-            )
-            if isinstance(result, NodePath):
-                self.point_cloud_nodes.append(result)
-            else:
-                error_messages.append(f"Не удалось создать облако точек для {os.path.basename(file_path)}")
+            try:
+                data, i_values, u_values, wfs_values, gi7_values, gi8_values, gi9_values, gi10_values, motor_current_values = load_log_data(
+                    file_path)
+                if not data:
+                    print(f"[DEBUG] No data in file {file_path}")
+                    continue
+
+                param_values = get_gradient_param_values(
+                    params['gradient_param'], i_values, u_values, wfs_values,
+                    gi7_values, gi8_values, gi9_values, gi10_values, motor_current_values
+                )
+                if param_values is None:
+                    error_messages.append(f"Не удалось получить значения параметра для {os.path.basename(file_path)}")
+                    print(f"[DEBUG] param_values is None for {file_path}")
+                    continue
+
+                min_val, max_val = min(param_values), max(param_values)
+                print(f"[DEBUG] Data range for {file_path}: min={min_val}, max={max_val}")
+
+                if params['filter_type'] == "outside" and params['custom_min'] is not None and params[
+                    'custom_max'] is not None:
+                    if min_val >= params['custom_min'] and max_val <= params['custom_max']:
+                        print(
+                            f"[DEBUG] All points in {file_path} are inside range [{params['custom_min']}, {params['custom_max']}]. Skipping.")
+                        continue
+
+                result = get_result(
+                    file_path,
+                    self.node,
+                    params['gradient_param'],
+                    params['custom_min'],
+                    params['custom_max'],
+                    params['filter_type'],
+                    params['size_value'],
+                    params['spliter_value'],
+                    self.poit_mode,
+                )
+                print(f"[DEBUG] get_result returned: {type(result)}")
+                if isinstance(result, NodePath):
+                    self.point_cloud_nodes.append(result)
+                else:
+                    continue
+            except Exception as e:
+                error_messages.append(f"Ошибка обработки файла {os.path.basename(file_path)}: {e}")
+
+        all_messages = []
+        if empty_files:
+            all_messages.append(f"Пустые файлы: {', '.join(empty_files)}")
+        if error_messages:
+            all_messages.extend(error_messages)
+
+        if all_messages:
+            self.error.show_error_dialog("\n".join(all_messages))
 
         return empty_files, error_messages
 
@@ -339,8 +389,20 @@ class Scene4(Screen):
         """Process files to create initial point clouds."""
         all_data = []
         empty_files = []
+        error_messages = []
+
         gradient_param = self.pop_menu.magnitude_menu.get()
         filter_type = self.pop_menu.magnitude_menu_filter.get()
+
+        filter_mapping = {
+            "Все точки": "all",
+            "Внутри диапазона": "inside",
+            "За диап.": "outside"
+        }
+        filter_type = filter_mapping.get(filter_type, "all")
+
+        custom_min = float(self.input.number_input_bottom.get()) if self.input.number_input_bottom.get() else None
+        custom_max = float(self.input.number_input_top.get()) if self.input.number_input_top.get() else None
 
         for file_path in self.file_names:
             try:
@@ -351,21 +413,46 @@ class Scene4(Screen):
                 continue
 
             try:
+                data, i_values, u_values, wfs_values, gi7_values, gi8_values, gi9_values, gi10_values, motor_current_values = load_log_data(
+                    file_path)
+                if not data:
+                    continue
+
+                param_values = get_gradient_param_values(
+                    gradient_param, i_values, u_values, wfs_values,
+                    gi7_values, gi8_values, gi9_values, gi10_values, motor_current_values
+                )
+                if param_values is None:
+                    continue
+
+                min_val, max_val = min(param_values), max(param_values)
+                print(f"[DEBUG] Data range for {file_path}: min={min_val}, max={max_val}")
+
                 node_path, _, _, data = load_logs_and_create_point_cloud(
                     file_path,
                     self.node,
                     gradient_param=gradient_param,
                     filter_type=filter_type,
                     point=self.poit_mode,
+                    custom_min=custom_min,
+                    custom_max=custom_max,
                 )
                 if data:
                     all_data.extend(data)
                     self.point_cloud_nodes.append(node_path)
+                else:
+                    print(f"[DEBUG] No points after filtering for {file_path}. Skipping.")
             except Exception as e:
-                self.error.show_error_dialog(f"Ошибка обработки файла {os.path.basename(file_path)}: {e}")
+                error_messages.append(f"Ошибка обработки файла {os.path.basename(file_path)}: {e}")
 
+        all_messages = []
         if empty_files:
-            self.error.show_error_dialog(f"Пустые файлы: {', '.join(empty_files)}")
+            all_messages.append(f"Пустые файлы: {', '.join(empty_files)}")
+        if error_messages:
+            all_messages.extend(error_messages)
+
+        if all_messages:
+            self.error.show_error_dialog("\n".join(all_messages))
 
         return all_data
 

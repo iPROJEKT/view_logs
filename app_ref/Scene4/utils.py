@@ -257,14 +257,20 @@ def get_gradient_param_values(
 def filter_data(data, param_values, filter_type, custom_min, custom_max):
     """Фильтрует данные в зависимости от типа фильтра и заданных границ."""
     print(f"[DEBUG] Фильтрация данных: filter_type={filter_type}, custom_min={custom_min}, custom_max={custom_max}")
-    if filter_type == "Into" and custom_min is not None and custom_max is not None:
+    filtered_data = []
+
+    if filter_type == "all":
+        filtered_data = list(zip(data, param_values))
+    elif filter_type == "inside" and custom_min is not None and custom_max is not None:
         filtered_data = [(point, param) for point, param in zip(data, param_values)
                          if custom_min <= param <= custom_max]
-    elif filter_type == "Out" and custom_min is not None and custom_max is not None:
+    elif filter_type == "outside" and custom_min is not None and custom_max is not None:
         filtered_data = [(point, param) for point, param in zip(data, param_values)
                          if param < custom_min or param > custom_max]
     else:
-        filtered_data = list(zip(data, param_values))
+        print(f"[DEBUG] Неверный filter_type или отсутствуют custom_min/max: {filter_type}, {custom_min}, {custom_max}")
+        filtered_data = list(zip(data, param_values))  # Возвращаем все точки, если фильтр некорректен
+
     print(f"[DEBUG] После фильтрации: {len(filtered_data)} точек")
     return filtered_data
 

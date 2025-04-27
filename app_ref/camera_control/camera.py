@@ -51,14 +51,12 @@ class CameraControl(LSKControl, CompassControl):
     def toggle_projection(self):
         """Переключение между перспективной и ортографической проекцией."""
         if self.is_orthographic:
-            self.base.cam.node().setLens(self.lens)  # Назначаем новую линзу камере
+            self.base.cam.node().setLens(self.lens)
             self.is_orthographic = False
             print("Переключено на перспективную проекцию.")
         else:
-            # Переключаемся на ортографическую проекцию
             lens = OrthographicLens()
-            lens.setFilmSize(100, 100)  # Устанавливаем размер области видимости
-            self.base.cam.node().setLens(lens)  # Назначаем новую линзу камере
+            self.base.cam.node().setLens(lens)
             self.is_orthographic = True
             print("Переключено на ортографическую проекцию.")
         self.update_camera_status_text()
@@ -179,19 +177,14 @@ class CameraControl(LSKControl, CompassControl):
         self.reset_mouse_position()
 
     def handle_camera_rotation(self):
-        """Вращение камеры по ЛКМ."""
         self.ignore_first_move()
-
         if self.dx != 0 or self.dy != 0:
-
             current_hpr = self.base.camera.getHpr()
             new_h = current_hpr.getX() - self.dx * self.rotation_speed
             new_p = current_hpr.getY() - self.dy * self.rotation_speed
-
+            # Ограничение pitch для всех режимов
             new_p = max(-90, min(90, new_p))
-
             self.base.camera.setHpr(new_h, new_p, current_hpr.getZ())
-
         self.reset_mouse_position()
 
     def reset_mouse_position(self):
@@ -238,12 +231,10 @@ class CameraControl(LSKControl, CompassControl):
         :param direction: 1 для приближения, -1 для отдаления.
         """
         if self.is_orthographic:
-            # Если камера в ортографическом режиме
             lens = self.base.cam.node().getLens()
             current_size = lens.getFilmSize()
             new_size = current_size - Vec2(direction * self.zoom_speed, direction * self.zoom_speed)
 
-            # Ограничиваем минимальный и максимальный размер области видимости
             new_size.setX(max(10, min(500, new_size.getX())))
             new_size.setY(max(10, min(500, new_size.getY())))
 
