@@ -331,6 +331,8 @@ class Scene4(Screen):
     def show(self, file_names=None, selected_file_names=None, left_data_for_slider=None, right_data_for_slider=None):
         """Show the scene with the specified files and slider times."""
         super().show()
+        self.ui_node.show()
+        self.buttons.open_left_panel_button.show()
         if self.camera_control:
             self.camera_control.activate()
         self.buttons.back_button_from_point.show()
