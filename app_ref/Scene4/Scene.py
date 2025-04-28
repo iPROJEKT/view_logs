@@ -109,13 +109,12 @@ class Scene4(Screen):
             self.clear_point_cloud_nodes()
             if self.camera_control:
                 self.camera_control.deactivate()
-            file_names = self.file_names
             self.file_names = []
             self.all_data_point = []
             self.left_time_slider = 0
             self.right_time_slider = 0
             self.update_slider_text()
-            self.switch_callback(3, file_names=file_names)
+            self.switch_callback(3)
         except Exception as e:
             self.error.show_error_dialog(f"Ошибка возврата на Scene3: {e}")
 
@@ -349,7 +348,6 @@ class Scene4(Screen):
             self.show_fields()
             return
 
-        # Сохраняем выбранные файлы, если они переданы
         self.selected_files = selected_file_names if selected_file_names else []
 
         all_data = self._process_files_for_point_clouds()

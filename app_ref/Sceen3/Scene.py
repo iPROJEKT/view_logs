@@ -42,7 +42,8 @@ class Scene3(Screen):
         self.switch_callback = switch_callback
 
         # Списки для файлов
-        self.file_paths = []  # Храним полные пути
+        self.initial_file_pool = []  # Храним пул всех файлов
+        self.file_paths = []  # Храним полные пути текущих файлов
         self.file_names = []  # Храним имена файлов для отображения
         self.labels = []
         self.checkboxes = []
@@ -63,15 +64,19 @@ class Scene3(Screen):
         self.start_date = start_date
         self.end_date = end_date
 
-        # Use file_names if provided (e.g., from Scene4), otherwise fall back to file_paths
-        files_to_load = file_names if file_names is not None else file_paths
-
-        if files_to_load:
+        # Если переданы file_paths или file_names, обновляем пул
+        if file_paths or file_names:
+            files_to_load = file_names if file_names is not None else file_paths
+            self.initial_file_pool = files_to_load  # Сохраняем пул файлов
             self.load_file_list_from_paths(files_to_load)
-            # Restore selected files if returning from Scene4
             if file_names:
                 self.selected_files = file_names
                 self._restore_checkboxes()
+        # Если пул уже существует, загружаем его
+        elif self.initial_file_pool:
+            self.load_file_list_from_paths(self.initial_file_pool)
+            self._restore_checkboxes()
+        # Иначе загружаем файлы по датам
         else:
             self.load_file_list(start_date, end_date)
 
@@ -122,11 +127,10 @@ class Scene3(Screen):
             self.left_data_for_slider = datetime.now()
             self.right_data_for_slider = datetime.now()
 
-        # Передаем полный список файлов (self.file_paths) и, при необходимости, выбранные файлы
+        # Передаем только выбранные файлы в сцену 4
         self.switch_callback(
             4,
-            file_names=self.file_paths,  # Передаем все файлы
-            selected_file_names=valid_files,  # Передаем выбранные файлы отдельно
+            file_names=self.selected_files,  # Передаем только selected_files
             left_data_for_slider=self.left_data_for_slider,
             right_data_for_slider=self.right_data_for_slider
         )
