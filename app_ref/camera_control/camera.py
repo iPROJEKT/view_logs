@@ -34,6 +34,7 @@ class CameraControl(LSKControl, CompassControl):
         self.center_node = center_node
         self.alt_cam_text = alt_cam_text
         self.active = True
+        self.original_lens = self.base.cam.node().getLens()
         base.disableMouse()
 
         self.set_initial_camera_position()
@@ -51,14 +52,22 @@ class CameraControl(LSKControl, CompassControl):
     def toggle_projection(self):
         """Переключение между перспективной и ортографической проекцией."""
         if self.is_orthographic:
-            self.base.cam.node().setLens(self.lens)
+            # Возвращаемся к сохранённой перспективной линзе
+            new_lens = PerspectiveLens()
+            new_lens.setFov(self.original_lens.getFov())
+            new_lens.setNearFar(1, 10000)
+            self.base.cam.node().setLens(new_lens)
+            self.lens = new_lens
             self.is_orthographic = False
             print("Переключено на перспективную проекцию.")
         else:
-            lens = OrthographicLens()
-            self.base.cam.node().setLens(lens)
+            ortho_lens = OrthographicLens()
+            ortho_lens.setFilmSize(200, 200)
+            ortho_lens.setNearFar(-10000, 10000)
+            self.base.cam.node().setLens(ortho_lens)
             self.is_orthographic = True
             print("Переключено на ортографическую проекцию.")
+
         self.update_camera_status_text()
 
     def update_camera_status_text(self):
@@ -73,6 +82,8 @@ class CameraControl(LSKControl, CompassControl):
                 self.alt_cam_text['text'] = 'Свободная камера с ортографическим режимом'
             else:
                 self.alt_cam_text['text'] = 'Свободная камера без ортографического режима'
+        current_fov = self.base.cam.node().getLens().getFov()
+        print(f"Текущий FOV: {current_fov}")
         print(f"[STATUS] {self.alt_cam_text['text']}")
 
     def toggle_camera_mode(self):

@@ -109,7 +109,7 @@ class Scene4(Screen):
             self.clear_point_cloud_nodes()
             if self.camera_control:
                 self.camera_control.deactivate()
-            file_names = self.file_names[:]
+            file_names = self.file_names
             self.file_names = []
             self.all_data_point = []
             self.left_time_slider = 0
@@ -299,6 +299,7 @@ class Scene4(Screen):
             except Exception as e:
                 error_messages.append(f"Ошибка обработки файла {os.path.basename(file_path)}: {e}")
 
+        # Combine messages and show only if necessary
         all_messages = []
         if empty_files:
             all_messages.append(f"Пустые файлы: {', '.join(empty_files)}")
@@ -306,6 +307,7 @@ class Scene4(Screen):
             all_messages.extend(error_messages)
 
         if all_messages:
+            # Show error dialog only once with all messages
             self.error.show_error_dialog("\n".join(all_messages))
 
         return empty_files, error_messages
@@ -327,7 +329,7 @@ class Scene4(Screen):
         self.help_text.slider_left_time.show()
         self.help_text.slider_right_time.show()
 
-    def show(self, file_names=None, left_data_for_slider=None, right_data_for_slider=None):
+    def show(self, file_names=None, selected_file_names=None, left_data_for_slider=None, right_data_for_slider=None):
         """Show the scene with the specified files and slider times."""
         super().show()
         if self.camera_control:
@@ -346,6 +348,9 @@ class Scene4(Screen):
         if not valid_files:
             self.show_fields()
             return
+
+        # Сохраняем выбранные файлы, если они переданы
+        self.selected_files = selected_file_names if selected_file_names else []
 
         all_data = self._process_files_for_point_clouds()
         if all_data:

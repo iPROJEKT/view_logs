@@ -109,6 +109,7 @@ class Scene3(Screen):
             if not valid_files:
                 return
         self.selected_files = valid_files
+
         dates = [
             extract_prog_number(os.path.basename(file_path))[1]
             for file_path in valid_files
@@ -121,9 +122,11 @@ class Scene3(Screen):
             self.left_data_for_slider = datetime.now()
             self.right_data_for_slider = datetime.now()
 
+        # Передаем полный список файлов (self.file_paths) и, при необходимости, выбранные файлы
         self.switch_callback(
             4,
-            file_names=valid_files,
+            file_names=self.file_paths,  # Передаем все файлы
+            selected_file_names=valid_files,  # Передаем выбранные файлы отдельно
             left_data_for_slider=self.left_data_for_slider,
             right_data_for_slider=self.right_data_for_slider
         )

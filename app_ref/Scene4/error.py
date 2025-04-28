@@ -1,44 +1,47 @@
 from direct.gui.DirectDialog import OkDialog
 
 
+from direct.gui.DirectDialog import OkDialog
+from panda3d.core import TextNode
+
 class ErrorDialogsUI:
-    def __init__(self, config, base, **kwargs):
+    def __init__(self, config, base, node=None, button=None):
         self.config = config
         self.base = base
-        self.node = kwargs.get("node", None)
-        self.button = kwargs.get("button", None)
-        self.custom_font = self.base.loader.loadFont(self.config.custom_font)
+        self.node = node
+        self.button = button
         self.error_dialog = None
 
     def show_error_dialog(self, message):
-        """Show an error dialog with the specified message."""
-        # Destroy any existing dialog
+        # Clean up any existing dialog
+        self.cleanup()
+
+        self.error_dialog = OkDialog(
+            text=message,
+            text_wordwrap=20,
+            text_align=TextNode.ACenter,
+            text_scale=0.06,
+            text_pos=(0, 0.2),
+            buttonTextList=["OK"],
+            command=self._on_dialog_ok,
+            parent=self.node if self.node else self.base.aspect2d,
+            pos=(0, 0, 0),  # Center the dialog
+            scale=1.0
+        )
+
+        # Disable the button (if provided) while dialog is active
+        if self.button:
+            self.button['state'] = 'disabled'
+
+    def _on_dialog_ok(self, value):
+        # Clean up the dialog when OK is pressed
+        self.cleanup()
+
+    def cleanup(self):
+        # Properly destroy the dialog if it exists
         if self.error_dialog:
             self.error_dialog.destroy()
             self.error_dialog = None
-
-        # Use a unique dialog name to avoid conflicts
-        unique_name = f"ErrorDialog_{id(self)}"
-        self.error_dialog = OkDialog(
-            dialogName=unique_name,
-            text=message,
-            buttonTextList=["OK"],
-            command=self.close_error_dialog,
-            text_font=self.custom_font,
-            text_fg=self.config.text_color,
-            relief=None
-        )
-        self.error_dialog.show()
+        # Re-enable the button (if provided)
         if self.button:
-            self.button.hide()
-        if self.node:
-            self.node.hide()
-
-    def close_error_dialog(self, _):
-        """Close the error dialog."""
-        if self.error_dialog:
-            self.error_dialog.hide()
-            if self.button:
-                self.button.show()
-            if self.node:
-                self.node.show()
+            self.button['state'] = 'normal'

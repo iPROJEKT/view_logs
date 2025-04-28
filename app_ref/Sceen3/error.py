@@ -7,11 +7,10 @@ class ErrorDialogsUI:
         self.base = base
         self.frame = kwargs.get("frame", None)
         self.custom_font = self.base.loader.loadFont(self.config.custom_font)
-        self.error_dialog = None  # Будем создавать диалог динамически
+        self.error_dialog = None
 
     def show_error_dialog(self, message="Ошибка: Вы не выбрали точки для просмотра!"):
         """Показать диалог ошибки с указанным сообщением."""
-        # Если диалог уже существует, уничтожаем его
         if self.error_dialog:
             self.error_dialog.destroy()
 
