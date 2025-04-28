@@ -46,7 +46,6 @@ class SliderUI:
                 self.time_label.show()
                 return
 
-            # Вычисляем разницу времени в секундах
             time_range = (right_dt - left_dt).total_seconds()
             if time_range <= 0:
                 self.time_label['text'] = "Invalid Range"

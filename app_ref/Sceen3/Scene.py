@@ -127,10 +127,12 @@ class Scene3(Screen):
             self.left_data_for_slider = datetime.now()
             self.right_data_for_slider = datetime.now()
 
-        # Передаем только выбранные файлы в сцену 4
+        print("[DEBUG] Switching to Scene4 with files:", self.selected_files)
+        print("[DEBUG] Slider dates:", self.left_data_for_slider, self.right_data_for_slider)
+
         self.switch_callback(
             4,
-            file_names=self.selected_files,  # Передаем только selected_files
+            file_names=self.selected_files,
             left_data_for_slider=self.left_data_for_slider,
             right_data_for_slider=self.right_data_for_slider
         )

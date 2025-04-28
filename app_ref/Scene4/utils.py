@@ -54,19 +54,15 @@ def normalize_parameter(param_values, custom_min=None, custom_max=None, error_ui
         try:
             param_min = float(custom_min)
             param_max = float(custom_max)
-            print(f"[DEBUG] Используются пользовательские границы: min={param_min}, max={param_max}")
         except ValueError as e:
-            print(f"[ERROR] Ошибка преобразования custom_min/max: {e}")
             if error_ui:
                 error_ui.show_error(f"Ошибка: некорректные значения min/max ({e})")
             return [0.5] * len(param_values)
     else:
         param_min = min(param_values)
         param_max = max(param_values)
-        print(f"[DEBUG] Автоматические границы: min={param_min}, max={param_max}")
 
     if param_min == param_max:
-        print(f"[DEBUG] Минимум и максимум совпадают ({param_min}). Нормализация невозможна, возвращается [0.5]")
         if error_ui:
             error_ui.show_error(f"Параметр имеет одинаковые значения ({param_min}). Выберите другой параметр.")
         return [0.5] * len(param_values)
@@ -83,13 +79,11 @@ def generate_roygb_gradient(length_grad):
             royg_gradient[i] = [i / section, 1, 0]  # green_to_yellow
         else:
             royg_gradient[i] = [1, 1 - (i - section) / section, 0]  # yellow_to_red
-    print(f"[DEBUG] Создан градиент длиной {length_grad + 1}")
     return royg_gradient
 
 
 def create_point_cloud(data, param_normalized, royg_gradient, length_grad, parent, point_size=1.0):
     """Создает облако точек с градиентом в RGB, записывая в BGR."""
-    print(f"[DEBUG] Создание облака точек: {len(data)} точек, point_size={point_size}")
     vertex_data = GeomVertexData("log_point_cloud", GeomVertexFormat.get_v3c4(), Geom.UH_static)
     vertex_writer = GeomVertexWriter(vertex_data, "vertex")
     color_writer = GeomVertexWriter(vertex_data, "color")
@@ -113,7 +107,6 @@ def create_point_cloud(data, param_normalized, royg_gradient, length_grad, paren
     node_path.setLightOff(1)
     node_path.setColorOff(1)
     node_path.setShaderAuto()
-    print(f"[DEBUG] Облако точек создано, node_path={node_path}")
     return node_path
 
 
@@ -159,9 +152,6 @@ def load_logs_and_create_point_cloud(
         point=True
 ):
     """Основная функция, которая загружает логи, нормализует данные, создает градиент и облако точек."""
-    print(
-        f"[DEBUG] Запуск load_logs_and_create_point_cloud: file={file_path}, gradient_param={gradient_param}, filter_type={filter_type}")
-
     try:
         point_step = int(point_step)
         point_size = int(point_size)
@@ -199,18 +189,13 @@ def load_logs_and_create_point_cloud(
         GI7_values, GI8_values, GI9_values, GI10_values, motor_current_values
     )
     if param_values is None:
-        print(f"[DEBUG] param_values is None для gradient_param={gradient_param}")
         return None, None, None, None
 
-    print(f"[DEBUG] Длина param_values={len(param_values)}, длина data={len(data)}")
     filtered_data = filter_data(data, param_values, filter_type, custom_min, custom_max)
     if not filtered_data:
-        print(
-            f"[DEBUG] Нет данных после фильтрации: filter_type={filter_type}, custom_min={custom_min}, custom_max={custom_max}")
         return None, None, None, None
 
     data, param_values = zip(*filtered_data)
-    print(f"[DEBUG] После фильтрации: {len(data)} точек")
     z_min, z_max = compute_z_range(data)
     param_normalized = normalize_parameter(param_values, custom_min, custom_max)
     if param_normalized is None:
@@ -228,7 +213,6 @@ def load_logs_and_create_point_cloud(
             data, param_normalized, royg_gradient,
             length_grad, parent, point_size
         )
-    print(f"[DEBUG] Создано облако: node_path={node_path}, z_min={z_min}, z_max={z_max}")
     return node_path, [point[2] for point in data], (z_min, z_max), data
 
 
@@ -256,9 +240,6 @@ def get_gradient_param_values(
 
 def filter_data(data, param_values, filter_type, custom_min, custom_max):
     """Фильтрует данные в зависимости от типа фильтра и заданных границ."""
-    print(f"[DEBUG] Фильтрация данных: filter_type={filter_type}, custom_min={custom_min}, custom_max={custom_max}")
-    filtered_data = []
-
     if filter_type == "all":
         filtered_data = list(zip(data, param_values))
     elif filter_type == "inside" and custom_min is not None and custom_max is not None:

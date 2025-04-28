@@ -12,19 +12,20 @@ class ErrorDialogsUI:
         self.button = button
         self.error_dialog = None
 
+        self.custom_font = self.base.loader.loadFont(self.config.custom_font)
+
     def show_error_dialog(self, message):
-        # Clean up any existing dialog
         self.cleanup()
 
         self.error_dialog = OkDialog(
             text=message,
             text_wordwrap=20,
+            text_font=self.custom_font,
             text_align=TextNode.ACenter,
             text_scale=0.06,
             text_pos=(0, 0.2),
             buttonTextList=["OK"],
             command=self._on_dialog_ok,
-            parent=self.node if self.node else self.base.aspect2d,
             pos=(0, 0, 0),  # Center the dialog
             scale=1.0
         )

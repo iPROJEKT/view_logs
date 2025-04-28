@@ -239,14 +239,11 @@ class Scene4(Screen):
         empty_files = []
         error_messages = []
 
-        print(f"[DEBUG] Processing {visible_layers} files with params: {params}")
-
         for file_path in self.file_names[:visible_layers]:
             print(f"[DEBUG] Processing file: {file_path}")
             try:
                 if os.stat(file_path).st_size == 0:
                     empty_files.append(os.path.basename(file_path))
-                    print(f"[DEBUG] File {file_path} is empty")
                     continue
             except OSError as e:
                 error_messages.append(f"Ошибка доступа к файлу {os.path.basename(file_path)}: {e}")
@@ -269,16 +266,6 @@ class Scene4(Screen):
                     print(f"[DEBUG] param_values is None for {file_path}")
                     continue
 
-                min_val, max_val = min(param_values), max(param_values)
-                print(f"[DEBUG] Data range for {file_path}: min={min_val}, max={max_val}")
-
-                if params['filter_type'] == "outside" and params['custom_min'] is not None and params[
-                    'custom_max'] is not None:
-                    if min_val >= params['custom_min'] and max_val <= params['custom_max']:
-                        print(
-                            f"[DEBUG] All points in {file_path} are inside range [{params['custom_min']}, {params['custom_max']}]. Skipping.")
-                        continue
-
                 result = get_result(
                     file_path,
                     self.node,
@@ -290,7 +277,6 @@ class Scene4(Screen):
                     params['spliter_value'],
                     self.poit_mode,
                 )
-                print(f"[DEBUG] get_result returned: {type(result)}")
                 if isinstance(result, NodePath):
                     self.point_cloud_nodes.append(result)
                 else:
@@ -328,10 +314,9 @@ class Scene4(Screen):
         self.help_text.slider_left_time.show()
         self.help_text.slider_right_time.show()
 
-    def show(self, file_names=None, selected_file_names=None, left_data_for_slider=None, right_data_for_slider=None):
+    def show(self, file_names, selected_file_names=None, left_data_for_slider=None, right_data_for_slider=None):
         """Show the scene with the specified files and slider times."""
         super().show()
-        self.ui_node.show()
         self.buttons.open_left_panel_button.show()
         if self.camera_control:
             self.camera_control.activate()
@@ -342,12 +327,10 @@ class Scene4(Screen):
 
         if not file_names:
             self.error.show_error_dialog("Ошибка: не выбраны файлы для отображения")
-            self.show_fields()
             return
 
         valid_files = self._validate_and_store_files(file_names)
         if not valid_files:
-            self.show_fields()
             return
 
         self.selected_files = selected_file_names if selected_file_names else []
@@ -429,10 +412,6 @@ class Scene4(Screen):
                 )
                 if param_values is None:
                     continue
-
-                min_val, max_val = min(param_values), max(param_values)
-                print(f"[DEBUG] Data range for {file_path}: min={min_val}, max={max_val}")
-
                 node_path, _, _, data = load_logs_and_create_point_cloud(
                     file_path,
                     self.node,
@@ -470,8 +449,9 @@ class Scene4(Screen):
 
     def init_camera(self):
         """Initialize the camera after loading data."""
-        if not self.camera_control:
-            self.camera_control = CameraControl(self.base, self.center_node, self.help_text.alt_cam)
+        if self.camera_control:
+            self.camera_control.deactivate()
+        self.camera_control = CameraControl(self.base, self.center_node, self.help_text.alt_cam)
 
     def init_text(self, left_data_for_slider, right_data_for_slider):
         """Initialize slider text with provided times."""

@@ -27,7 +27,8 @@ class ButtonsUI:
             command=self.show_left_panel,
             relief=None,
             text_fg=self.config.text_color,
-            text_bg=self.config.background_color_choice
+            text_bg=self.config.background_color_choice,
+            sortOrder=10
         )
         self.closed_left_panel_button = DirectButton(
             text="<",
@@ -90,6 +91,7 @@ class ButtonsUI:
         self.open_left_panel_button.hide()
 
     def show_left_panel(self):
+        print("[DEBUG] Toggle left panel button clicked")
         self.open_left_panel_button.hide()
         self.slider.hide()
         self.back_button_from_point.hide()
@@ -100,6 +102,7 @@ class ButtonsUI:
             self.scene.camera_control.compass_node.hide()
 
     def close_left_panel(self):
+        print("[DEBUG] Toggle left panel button clicked")
         self.frame.hide()
         self.slider.show()
         self.le.show()
@@ -114,9 +117,9 @@ class ButtonsUI:
             self.points_button["text_bg"] = (33/255, 33/255, 33/255, 1)
             self.lines_button["text_bg"] = self.config.background_color_choice
             self.text['text'] = 'Режим отображения: Точки'
-            self.scene.poit_mode = True  # Обновляем poit_mode в Scene4
+            self.scene.poit_mode = True
         else:
             self.points_button["text_bg"] = self.config.background_color_choice
             self.lines_button["text_bg"] = (33/255, 33/255, 33/255, 1)
             self.text['text'] = 'Режим отображения: Линии'
-            self.scene.poit_mode = False  # Обновляем poit_mode в Scene4
+            self.scene.poit_mode = False
